@@ -1,12 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
 import PersonCard from '../components/PersonCard.astro';
-import { getPeople, type PersonEntry } from '../lib/people';
+import { getPeople, personColor, type PersonEntry } from '../lib/people';
 import { formatDate, needsPresumptionNotice, groupByType, splitLede, GROUP_LABELS, TYPE_LABELS, STATUS_LABELS } from '../lib/facts';
 import { textOn, inkTone } from '../lib/color';
 import { THEMES, THEME_LABELS, PROGRAMME_STATUS_LABELS } from '../lib/programme';
 import Measures from '../components/Measures.astro';
-import { url } from '../lib/url';
+import { url, absoluteUrl } from '../lib/url';
 import { readFileSync } from 'node:fs';
 
 export async function getStaticPaths() {
@@ -15,6 +15,7 @@ export async function getStaticPaths() {
     params: { slug: person.id },
     props: {
       person,
+      color: personColor(person, people),
       candidate: people.find((p) => p.id === person.data.candidateOf),
       team: people.filter((p) => p.data.candidateOf === person.id),
     },
@@ -23,20 +24,34 @@ export async function getStaticPaths() {
 
 interface Props {
   person: PersonEntry;
+  color: string;
   candidate?: PersonEntry;
   team: PersonEntry[];
 }
-const { person, candidate, team } = Astro.props;
+const { person, color, candidate, team } = Astro.props;
 const { name, party, photo, photoCredit, teamPosition, updatedAt, facts, programme } = person.data;
-const color = person.data.partyColor ?? candidate?.data.partyColor ?? '#1c1b19';
 const groups = groupByType(facts);
+// Neutral structured data: identity and affiliation only, never facts.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ProfilePage',
+  url: absoluteUrl(`/${person.id}/`),
+  dateModified: updatedAt.toISOString().slice(0, 10),
+  mainEntity: {
+    '@type': 'Person',
+    name,
+    affiliation: { '@type': 'Organization', name: party },
+    ...(photo && { image: absoluteUrl(photo) }),
+  },
+};
 let factNumber = 0; // page-wide, for #fact-<n> deep links
 // Intrinsic size from the PNG header, so the portrait box is right before the image loads
 // (and the view-transition snapshot has the image's aspect ratio).
 const png = photo ? readFileSync(`public${photo}`) : undefined;
 const [photoW, photoH] = png ? [png.readUInt32BE(16), png.readUInt32BE(20)] : [];
 ---
-<Base title={name} description={`Condamnations, procédures, allégations et prises de position de ${name}, sourcées et archivées.`} ink={textOn(color)}>
+<Base title={name} description={`Condamnations, procédures, allégations et prises de position de ${name}, sourcées et archivées.`} ink={textOn(color)}
+  type="profile" image={`/og/${person.id}.png`} imageAlt={name} themeColor={color} jsonLd={jsonLd}>
   <section id="top" class="poster" style={`--party: ${color}; --ink: ${textOn(color)}; --r: ${photoW ? (photoW / photoH!).toFixed(3) : 0.75}`}>
     <p class="ghost" aria-hidden="true">{name}</p>
     <h1 class="visually-hidden">{name}</h1>

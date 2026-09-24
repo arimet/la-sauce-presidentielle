@@ -13,3 +13,7 @@ export async function getPeople(): Promise<PersonEntry[]> {
   }
   return people;
 }
+
+/** Hero color of a person page: own party color, else their candidate's. */
+export const personColor = (person: PersonEntry, people: PersonEntry[]) =>
+  person.data.partyColor ?? people.find((p) => p.id === person.data.candidateOf)?.data.partyColor ?? '#1c1b19';

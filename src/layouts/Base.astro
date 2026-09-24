@@ -1,5 +1,5 @@
 ---
-import { url } from '../lib/url';
+import { url, absoluteUrl } from '../lib/url';
 
 interface Props {
   title?: string;
@@ -7,8 +7,25 @@ interface Props {
   /** Text color of the full-bleed colored hero the header overlays; omit for a plain header. */
   ink?: string;
   footer?: boolean;
+  /** Social image, a 1200x630 PNG site path (defaults to the generic one, see src/pages/og/). */
+  image?: string;
+  imageAlt?: string;
+  type?: 'website' | 'profile' | 'article';
+  /** Browser UI color; defaults to the page background (light and dark). */
+  themeColor?: string;
+  /** Structured data, serialized as JSON-LD. */
+  jsonLd?: object;
+  noindex?: boolean;
 }
-const { title, description = 'Condamnations, procédures et polémiques des candidats à la présidentielle 2027, sourcées et archivées.', ink, footer = true } = Astro.props;
+const {
+  title, description = 'Condamnations, procédures et polémiques des candidats à la présidentielle 2027, sourcées et archivées.', ink, footer = true,
+  image = '/og/default.png', imageAlt = 'La Sauce Présidentielle : avant de voter, les faits.', type = 'website', themeColor, jsonLd, noindex = false,
+} = Astro.props;
+const SITE_NAME = 'La Sauce Présidentielle';
+const fullTitle = title ? `${title} · ${SITE_NAME}` : SITE_NAME;
+// Directory-style URLs, as GitHub Pages serves them (it redirects /page to /page/).
+const canonical = absoluteUrl(Astro.url.pathname.slice(import.meta.env.BASE_URL.replace(/\/$/, '').length).replace(/\/?$/, '/'));
+const imageUrl = absoluteUrl(image);
 
 // Self-hosted Google Fonts (SIL OFL, see public/fonts/LICENSE.md), latin +
 // latin-ext subsets only (French needs latin; cyrillic/greek/vietnamese
@@ -59,8 +76,29 @@ const OUTLINES = ([['sm', 1.5], ['md', 3.5], ['lg', 5]] as const).flatMap(([size
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>{title ? `${title} · La Sauce Présidentielle` : 'La Sauce Présidentielle'}</title>
+    <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    {!noindex && <meta property="og:url" content={canonical} />}
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:image" content={imageUrl} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={imageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
+    <meta name="twitter:image:alt" content={imageAlt} />
+    {themeColor
+      ? <meta name="theme-color" content={themeColor} />
+      : <><meta name="theme-color" content="#f4f4f2" media="(prefers-color-scheme: light)" /><meta name="theme-color" content="#131313" media="(prefers-color-scheme: dark)" /></>}
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />}
     <link rel="icon" href={url('/favicon.svg')} type="image/svg+xml" />
     <link rel="icon" href={url('/favicon.ico')} sizes="32x32" />
     <link rel="apple-touch-icon" href={url('/apple-touch-icon.png')} />

@@ -3,7 +3,7 @@ import Base from '../layouts/Base.astro';
 import { getPeople } from '../lib/people';
 import { summarizeCounts } from '../lib/facts';
 import { textOn, inkTone } from '../lib/color';
-import { url } from '../lib/url';
+import { url, absoluteUrl } from '../lib/url';
 
 const candidates = (await getPeople())
   .filter((p) => p.data.role === 'candidate')
@@ -12,7 +12,7 @@ const total = candidates.length; // the counter counts candidates only
 const pad = (n: number) => String(n).padStart(2, '0');
 const initials = (name: string) => name.split(' ').map((w) => w[0]).join('').slice(0, 2);
 ---
-<Base ink="var(--fg)" footer={false}>
+<Base ink="var(--fg)" footer={false} jsonLd={{ '@context': 'https://schema.org', '@type': 'WebSite', name: 'La Sauce Présidentielle', url: absoluteUrl('/'), inLanguage: 'fr' }}>
   <section class="stage" aria-label="Candidats">
     <article class="slide intro" data-active style="--party: var(--bg); --ink: var(--fg)">
       <img class="backdrop" src={url('/images/elysee-toon.webp')} alt="" width="1920" height="1000" />

@@ -7,6 +7,7 @@ import { NO_FAULT_NOTICE } from '../lib/entourage';
 import { textOn } from '../lib/color';
 import { url } from '../lib/url';
 import aliases from '../data/organization-aliases.json';
+import excluded from '../data/network-excluded.json';
 
 const people = await getPeople();
 const candidates = people
@@ -14,7 +15,7 @@ const candidates = people
   .sort((a, b) => a.data.name.localeCompare(b.data.name, 'fr'));
 const byId = new Map(people.map((p) => [p.id, p]));
 const team = people.filter((p) => p.data.role === 'team');
-const shared = sharedOrganizations(team, aliases);
+const shared = sharedOrganizations(team, aliases, excluded);
 const [W, H] = [1000, 640];
 const graph = layoutGraph(shared, W, H);
 const color = (slug: string) => byId.get(slug)?.data.partyColor ?? '#1c1b19';
@@ -23,7 +24,7 @@ const nodeHref = (kind: string, id: string) => (kind === 'org' ? `#org-${id}` : 
 <Base title="L'entourage des candidats" description="Qui entoure les candidats à la présidentielle 2027 : équipes de campagne, parcours et liens d'intérêts déclarés, et les organisations communes à plusieurs entourages.">
   <div class="wrap wide">
     <h1>L'entourage des candidats</h1>
-    <p class="intro">Les rôles clés des campagnes (direction, finances, programme, porte-parole, conseillers nommés publiquement), au plus {MAX_TEAM} personnes par candidat, avec les mêmes critères pour tous. Pour chacune : son rôle public, son parcours documenté depuis 2012 et ses liens d'intérêts déclarés, chaque élément sourcé et archivé. Cette page montre les organisations où ont travaillé, ou avec lesquelles ont des liens, des membres de plusieurs entourages. <a href={url('/methodologie#entourage')}>Méthode et droit d'opposition</a>.</p>
+    <p class="intro">Les rôles clés des campagnes (direction, finances, programme, porte-parole, conseillers nommés publiquement), au plus {MAX_TEAM} personnes par candidat, avec les mêmes critères pour tous. Pour chacune : son rôle public, son parcours documenté depuis 2012 et ses liens d'intérêts déclarés, chaque élément sourcé et archivé. Cette page montre les organisations où ont travaillé, ou avec lesquelles ont des liens, des membres de plusieurs entourages ; les assemblées élues et les collectivités (Parlement, conseils régionaux, communes…) n'y sont pas comptées, car y siéger n'est pas un lien entre entourages. <a href={url('/methodologie#entourage')}>Méthode et droit d'opposition</a>.</p>
     <p class="notice">{NO_FAULT_NOTICE} Passer par la même organisation n'implique aucune entente.</p>
 
     <CandidateFilter candidates={candidates} storageKey="entourage-hidden" label="Afficher" />

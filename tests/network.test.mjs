@@ -60,3 +60,9 @@ test('lays out candidates, people and shared organizations inside the viewBox, d
 test('an empty network has no nodes', () => {
   assert.deepEqual(layoutGraph([], 600, 400), { nodes: [], links: [] });
 });
+
+test('ignores excluded organizations (elected assemblies), matched as normalized prefixes', () => {
+  const people = [person('a', 'x', ['Assemblée nationale', 'Commune de Beaucaire', 'Gouvernement']), person('b', 'y', ['assemblee nationale', 'Commune de Nîmes', 'Gouvernement'])];
+  const shared = sharedOrganizations(people, {}, ['Assemblée nationale', 'Commune de']);
+  assert.deepEqual(shared.map((o) => o.name), ['Gouvernement']);
+});

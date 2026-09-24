@@ -15,7 +15,9 @@ export const normalize = (name: string) =>
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim();
 
-export function sharedOrganizations<M extends Member>(people: M[], aliases: Aliases = {}): SharedOrganization<M>[] {
+/** `excluded`: name prefixes left out of the network (src/data/network-excluded.json). */
+export function sharedOrganizations<M extends Member>(people: M[], aliases: Aliases = {}, excluded: string[] = []): SharedOrganization<M>[] {
+  const skip = excluded.map(normalize);
   const canonical = new Map<string, string>();
   for (const [name, variants] of Object.entries(aliases)) {
     for (const v of [name, ...variants]) canonical.set(normalize(v), name);
@@ -26,6 +28,7 @@ export function sharedOrganizations<M extends Member>(people: M[], aliases: Alia
     for (const { organization } of [...(p.data.career ?? []), ...(p.data.interests ?? [])]) {
       const name = canonical.get(normalize(organization)) ?? organization;
       const key = normalize(name);
+      if (skip.some((prefix) => key.startsWith(prefix))) continue;
       if (!orgs.has(key)) orgs.set(key, { name, people: new Set() });
       orgs.get(key)!.people.add(p);
     }
@@ -46,7 +49,8 @@ export type GraphNode = { kind: 'candidate' | 'person' | 'org'; id: string; labe
 export type GraphLink = { source: string; target: string; x1: number; y1: number; x2: number; y2: number; candidates: string[] };
 export const NODE_RADIUS = { candidate: 22, person: 7, org: 11 } as const;
 
-export function layoutGraph<M extends Member>(shared: SharedOrganization<M>[], width: number, height: number, padding = 40) {
+// Padding leaves room for labels: names run up to ~100 units either side of a node, and below it.
+export function layoutGraph<M extends Member>(shared: SharedOrganization<M>[], width: number, height: number, padX = 110, padY = 45) {
   type N = GraphNode & { key: string; index?: number; vx?: number; vy?: number };
   const nodes = new Map<string, N>();
   const edges: { source: string; target: string; candidates: string[] }[] = [];
@@ -91,7 +95,7 @@ export function layoutGraph<M extends Member>(shared: SharedOrganization<M>[], w
   const xs = list.map((n) => n.x), ys = list.map((n) => n.y);
   const [minX, minY] = [Math.min(...xs), Math.min(...ys)];
   const spanX = Math.max(...xs) - minX || 1, spanY = Math.max(...ys) - minY || 1;
-  const scale = Math.min((width - 2 * padding) / spanX, (height - 2 * padding) / spanY);
+  const scale = Math.min((width - 2 * padX) / spanX, (height - 2 * padY) / spanY);
   const offX = (width - spanX * scale) / 2, offY = (height - spanY * scale) / 2;
   const round = (v: number) => Math.round(v * 10) / 10;
   for (const n of list) {

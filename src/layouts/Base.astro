@@ -98,7 +98,8 @@ const OUTLINES = ([['sm', 1.5], ['md', 3.5], ['lg', 5]] as const).flatMap(([size
     <meta name="twitter:image:alt" content={imageAlt} />
     {themeColor
       ? <meta name="theme-color" content={themeColor} />
-      : <><meta name="theme-color" content="#f4f4f2" media="(prefers-color-scheme: light)" /><meta name="theme-color" content="#131313" media="(prefers-color-scheme: dark)" /></>}
+      : <meta name="theme-color" content="#f4f4f2" />}
+    <meta name="color-scheme" content="only light" />
     {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />}
     <link rel="icon" href={url('/favicon.svg')} type="image/svg+xml" />
     <link rel="icon" href={url('/favicon.ico')} sizes="32x32" />
@@ -144,13 +145,8 @@ const OUTLINES = ([['sm', 1.5], ['md', 3.5], ['lg', 5]] as const).flatMap(([size
         /* Category badges: distinguishable hues, equal weight (same lightness band, same outline style). */
         --conviction: #a8302a; --proceeding: #8a5a00; --allegation: #6f5391; --stance: #36648a;
         font-family: var(--sans); color: var(--fg); background: var(--bg);
-        color-scheme: light dark;
-      }
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --bg: #131313; --fg: #ececea; --muted: #a3a39e; --line: #2c2c2a;
-          --conviction: #ef9a93; --proceeding: #e0b061; --allegation: #c2a9e2; --stance: #93bde0;
-        }
+        /* Light only: the editorial design (party colors, Élysée backdrop) is built for it. */
+        color-scheme: only light;
       }
       body { margin: 0; line-height: 1.55; -webkit-font-smoothing: antialiased; }
       .wrap { max-width: 60rem; margin: 0 auto; padding: 0 max(1rem, env(safe-area-inset-right)) 0 max(1rem, env(safe-area-inset-left)); }

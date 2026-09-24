@@ -1,0 +1,25 @@
+{
+  "name": "la-sauce-presidentielle",
+  "description": "Neutral, sourced and archived facts about the 2027 French presidential candidates: convictions, proceedings, controversies and programmes.",
+  "license": "MIT",
+  "author": "Anthony Rimet (https://github.com/arimet)",
+  "homepage": "https://arimet.github.io/la-sauce-presidentielle/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arimet/la-sauce-presidentielle.git"
+  },
+  "bugs": {
+    "url": "https://github.com/arimet/la-sauce-presidentielle/issues"
+  },
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "astro": "^7.3.4"
+  }
+}

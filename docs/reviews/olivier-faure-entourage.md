@@ -34,3 +34,60 @@ Recherche du 2026-09-24, mode `list`. Contexte : Olivier Faure est candidat à l
 - Toujours aucun coordinateur de programme ni trésorier de campagne identifié dans la presse acceptée. Le Monde (9 et 23 septembre) et Le Figaro (15 septembre) sont réservés aux abonnés et n'ont pas pu être lus : ils peuvent contenir d'autres rôles.
 
 Relire la liste avant l'étape 2 (parcours et liens d'intérêts).
+
+## Pierre Jouvet
+
+Recherche du 2026-09-24, mode `details`. Sources principales : déclaration d'intérêts modificative HATVP du 13 avril 2025 (https://www.hatvp.fr/livraison/dossiers/jouvet-pierre-dim33237-europe.pdf) et fiche du Parlement européen (https://www.europarl.europa.eu/meps/fr/256898/PIERRE_JOUVET/home). Identité : nom + date de naissance (6 octobre 1986, identique sur la déclaration HATVP et sur la fiche du Parlement européen) + mandat de député européen.
+
+- [ ] poste · Député européen · Parlement européen · en cours (début non renseigné, voir plus bas) — https://www.europarl.europa.eu/meps/fr/256898/PIERRE_JOUVET/home · https://www.hatvp.fr/livraison/dossiers/jouvet-pierre-dim33237-europe.pdf
+- [ ] poste · Secrétaire général · Parti socialiste · depuis 01/2022 — https://www.hatvp.fr/livraison/dossiers/jouvet-pierre-dim33237-europe.pdf
+- [ ] poste · Conseiller départemental de la Drôme · 03/2015 – 04/2025 — https://www.hatvp.fr/livraison/dossiers/jouvet-pierre-dim33237-europe.pdf
+- [ ] poste · Président · Communauté de communes Porte de DrômArdèche · 04/2014 – 07/2024 — https://www.hatvp.fr/livraison/dossiers/jouvet-pierre-dim33237-europe.pdf
+- [ ] poste · Maire · Saint-Vallier (Drôme) · 05/2020 – 06/2024 — https://www.hatvp.fr/livraison/dossiers/jouvet-pierre-dim33237-europe.pdf
+- [ ] poste · Secrétaire national et porte-parole · Parti socialiste · 06/2015 – 07/2020 — https://www.hatvp.fr/livraison/dossiers/jouvet-pierre-dim33237-europe.pdf
+- [ ] poste · Intervenant en master 2 · Université Lyon 2 · janvier-février 2019 et 2020 — https://www.hatvp.fr/livraison/dossiers/jouvet-pierre-dim33237-europe.pdf
+- [ ] poste · Vice-président · SDIS de la Drôme · 05/2015 – 03/2016 — https://www.hatvp.fr/livraison/dossiers/jouvet-pierre-dim33237-europe.pdf
+- [ ] poste · Premier adjoint au maire · Saint-Vallier (Drôme) · 03/2014 – 05/2020 — https://www.hatvp.fr/livraison/dossiers/jouvet-pierre-dim33237-europe.pdf
+- [ ] board · SEM Énergie Rhône-Vallée · 06/2020 – 09/2021 (officiel) — https://www.hatvp.fr/livraison/dossiers/jouvet-pierre-dim33237-europe.pdf
+
+### Homonymes écartés
+
+- Annuaire des entreprises : aucun mandat de dirigeant d'entreprise commerciale au nom de Pierre Jouvet né en octobre 1986. Les autres « Pierre Jouvet » du registre (nés en 1946, 1958, 1980, 1989, etc.) sont écartés (date de naissance différente).
+- Répertoire des représentants d'intérêts (AGORA) : Pierre Jouvet n'y figure que comme responsable public destinataire d'actions de lobbying (champ « observation »), ce qui n'est pas un intérêt. Une autre personne portant le nom Jouvet y est inscrite comme représentante d'intérêts : ce n'est pas Pierre Jouvet, non retenu.
+
+### Points d'attention
+
+- Début du mandat de député européen : la page « historique » du Parlement européen (https://www.europarl.europa.eu/meps/fr/256898/PIERRE_JOUVET/history/10) indique le 16 juillet 2024, mais Wayback Machine a refusé l'archivage (erreurs 429/500) ; la déclaration HATVP donne le 9 juin 2024 (date de l'élection). Champ `start` laissé vide ; à ajouter (2024-07-16) si la page peut être archivée.
+- Conseil départemental de la Drôme : la déclaration initiale (2024) déclare deux lignes (03/2015 – 08/2020 et depuis 06/2021) ; la modificative d'avril 2025 fixe une fin en 04/2025 sur la première ligne et laisse la seconde ouverte. Retenu : une seule entrée 03/2015 – 04/2025. À vérifier.
+- Participation financière déclarée dans une SCI (nom non publié par la HATVP) : patrimoine privé sans lien avec le rôle public, non retenue (minimisation des données). Ex-mandats d'office dans des syndicats publics (SIRCTOM, SDED, SYTRAD, vice-présidence finances) : liés aux mandats locaux, non retenus comme intérêts.
+- Carrière avant 2014 non documentée par une source officielle ; aucune recherche presse effectuée (quota).
+- Page HATVP https://www.hatvp.fr/pages_nominatives/jouvet-pierre non archivée (Wayback indisponible) : le PDF archivé est cité à la place.
+
+## Sébastien Vincini
+
+Recherche du 2026-09-24, mode `details`. Source principale : déclaration d'intérêts HATVP du 8 mars 2023, déposée comme président du conseil départemental de la Haute-Garonne (https://www.hatvp.fr/livraison/dossiers/vincini-sebastien-di26346-departement-31.pdf), seule déclaration publiée. Identité : nom + fonction de président du conseil départemental de la Haute-Garonne (citée par franceinfo, 4 septembre 2026, et ICI, 13 décembre 2022).
+
+- [ ] poste · Président du conseil départemental de la Haute-Garonne · depuis le 13/12/2022 — https://www.franceinfo.fr/environnement/qu-est-ce-que-le-socialisme-ecologique-prone-par-olivier-faure_8175926.html · https://www.hatvp.fr/livraison/dossiers/vincini-sebastien-di26346-departement-31.pdf · https://www.francebleu.fr/infos/politique/les-ambitions-de-sebastien-vincini-nouveau-president-du-conseil-departemental-de-la-haute-garonne-2115965
+- [ ] poste · Vice-président du conseil départemental · 07/2021 – 12/2022 — https://www.hatvp.fr/livraison/dossiers/vincini-sebastien-di26346-departement-31.pdf
+- [ ] poste · Conseiller départemental de la Haute-Garonne · depuis 2015 (« élu 2015 - réélu en 2021 ») — https://www.hatvp.fr/livraison/dossiers/vincini-sebastien-di26346-departement-31.pdf
+- [ ] poste · Conseiller municipal · Cintegabelle · depuis 12/2022 — https://www.hatvp.fr/livraison/dossiers/vincini-sebastien-di26346-departement-31.pdf
+- [ ] poste · Maire · Cintegabelle · 03/2020 – 12/2022 — https://www.hatvp.fr/livraison/dossiers/vincini-sebastien-di26346-departement-31.pdf · https://www.francebleu.fr/infos/politique/les-ambitions-de-sebastien-vincini-nouveau-president-du-conseil-departemental-de-la-haute-garonne-2115965
+- [ ] poste · Ingénieur territorial environnement · Conseil régional d'Occitanie · 01/2015 – 05/2020 — https://www.hatvp.fr/livraison/dossiers/vincini-sebastien-di26346-departement-31.pdf
+- [ ] poste · Président · Réseau31 · depuis 01/2017 — https://www.hatvp.fr/livraison/dossiers/vincini-sebastien-di26346-departement-31.pdf
+- [ ] poste · Vice-président · Communauté de communes du bassin Auterivain · depuis 01/2017 — https://www.hatvp.fr/livraison/dossiers/vincini-sebastien-di26346-departement-31.pdf
+- [ ] board · Mission locale Haute-Garonne (président du CA) · depuis 12/2022 (officiel) — https://www.hatvp.fr/livraison/dossiers/vincini-sebastien-di26346-departement-31.pdf
+- [ ] board · Comité départemental du tourisme de la Haute-Garonne (président du CA) · depuis 12/2022 (officiel) — https://www.hatvp.fr/livraison/dossiers/vincini-sebastien-di26346-departement-31.pdf
+- [ ] board · Association des départements solidaires (trésorier depuis 03/2023) · depuis 12/2022 (officiel) — https://www.hatvp.fr/livraison/dossiers/vincini-sebastien-di26346-departement-31.pdf
+- [ ] board · Solutions Solidaires (trésorier depuis 03/2023) · depuis 12/2022 (officiel) — https://www.hatvp.fr/livraison/dossiers/vincini-sebastien-di26346-departement-31.pdf
+
+### Homonymes écartés
+
+- Annuaire des entreprises : aucun dirigeant nommé Vincini ; la recherche ne renvoie que des collectivités (commune de Cintegabelle, département de la Haute-Garonne, CC du bassin Auterivain). Aucune inscription au répertoire AGORA.
+
+### Points d'attention
+
+- La déclaration de 2023 liste environ 50 organismes (conseils d'administration, assemblées générales) où il siège au titre du département. Critère retenu : uniquement les fonctions de président ou de trésorier dans des associations. Non retenus car organismes publics ou simples sièges d'office : Agence de l'eau Adour-Garonne, Société du Grand Projet du Sud-Ouest (conseil de surveillance), ATD-HGI (président), MDPH (président de la commission exécutive), GIP #France2023, INSA, écoles d'ingénieurs, EHPAD, Centre de formation professionnelle du Stade Toulousain (membre du CA), Open Data France, etc. À relire : liste complète dans la déclaration.
+- La déclaration date de mars 2023 : le maintien actuel de ces fonctions n'est pas vérifié. Les dates « depuis » reflètent la déclaration.
+- Début comme conseiller départemental : la déclaration dit « élu 2015 » (élections départementales de mars 2015) ; `start: 2015-03` retenu.
+- Écarté faute de seconde source archivée : premier secrétaire fédéral du PS de Haute-Garonne (2014 – mai 2022). ICI (13 décembre 2022, archivé) le dit « ancien premier secrétaire fédéral » ; France 3 Occitanie (14 décembre 2022) donne les dates, et la fédération PS31 (https://www.ps31.org/sebastien-vincini-reelu-premier-secretaire-federal-du-ps31/) l'annonce, mais aucune des deux pages n'a pu être archivée (Wayback indisponible). Idem pour le secrétariat national du PS (2015/2018), une seule source lue.
+- Page HATVP https://www.hatvp.fr/pages_nominatives/vincini-sebastien-8737 non archivée : le PDF archivé est cité.

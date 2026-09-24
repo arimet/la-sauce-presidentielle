@@ -37,3 +37,90 @@ Aucune personne ajoutée : aucun nouveau rôle ne remplit la règle (source offi
 - Une réserve pour Clémence Guetté : l'AFP du 24 août 2026 la dit « responsable du programme de LFI », ce qui confirme un rôle de parti et non un titre de campagne distinct (voir Points d'attention).
 
 Relire la liste avant l'étape 2 (parcours et liens d'intérêts).
+
+## Manuel Bompard
+
+Recherche du 2026-09-24, mode `details`. Sources principales : déclarations d'intérêts et d'activités HATVP du 6 août 2024 (https://www.hatvp.fr/livraison/dossiers/bompard-manuel-dia30891-depute-13.pdf) et du 11 février 2025 (https://www.hatvp.fr/livraison/dossiers/bompard-manuel-diam30892-depute-13.pdf), fiche de l'Assemblée nationale (https://www.assemblee-nationale.fr/dyn/deputes/PA793444). Identité : nom + date de naissance (30 mars 1986, identique sur la déclaration HATVP et la fiche de l'Assemblée) + mandat de député.
+
+- [ ] poste · Coordinateur · La France insoumise · depuis le 05/01/2023 — https://www.franceinfo.fr/politique/la-france-insoumise/le-depute-manuel-bompard-designe-coordinateur-de-la-france-insoumise-a-l-unanimite_5582808.html · https://lcp.fr/actualites/presidentielle-2027-pourquoi-jean-luc-melenchon-lance-t-il-sa-campagne-a-saint-denis
+- [ ] poste · Député des Bouches-du-Rhône (4e circ.) · Assemblée nationale · depuis le 22/06/2022 — https://www.assemblee-nationale.fr/dyn/deputes/PA793444 · https://www.hatvp.fr/livraison/dossiers/bompard-manuel-dia30891-depute-13.pdf
+- [ ] poste · Député européen · Parlement européen · 06/2019 – 07/2022 — https://www.hatvp.fr/livraison/dossiers/bompard-manuel-dia30891-depute-13.pdf
+- [ ] poste · Attaché chargé des initiatives de campagne · La France insoumise · 03/2019 – 05/2019 — https://www.hatvp.fr/livraison/dossiers/bompard-manuel-dia30891-depute-13.pdf
+- [ ] poste · Ingénieur de recherche · Adagos · 01/2017 – 06/2019 — https://www.hatvp.fr/livraison/dossiers/bompard-manuel-dia30891-depute-13.pdf
+- [ ] board · La France insoumise (président, fonction conservée) · depuis 01/2017 (officiel) — https://www.hatvp.fr/livraison/dossiers/bompard-manuel-dia30891-depute-13.pdf · https://www.hatvp.fr/livraison/dossiers/bompard-manuel-diam30892-depute-13.pdf
+
+### Homonymes écartés
+
+- Répertoire des représentants d'intérêts (AGORA) : le seul « Bompard » inscrit est Alexandre Bompard (Carrefour, Carrefour Management, FCD), autre personne. Manuel Bompard n'y figure pas comme représentant d'intérêts.
+- Annuaire des entreprises : Manuel Bompard (né en mars 1986, concordant) apparaît comme associé (« Autre ») d'une société civile immobilière familiale. Non retenu : patrimoine privé sans lien avec le rôle public, et la HATVP ne publie pas le nom des SCI qu'il déclare (minimisation des données).
+
+### Points d'attention
+
+- Participations financières déclarées à la HATVP (parts de SCI et d'un groupement foncier, noms non publiés par la HATVP) : non retenues, patrimoine privé (même règle que pour les autres fiches).
+- Fonction de président de La France insoumise : la déclaration indique « 01/2017 – 08/2024 » mais « conservée » ; 08/2024 semble être la date de la déclaration. Retenue sans date de fin. À vérifier.
+- Mandat de député européen : dates HATVP au mois (06/2019, date de l'élection ; 07/2022). La page « historique » du Parlement européen n'a pas pu être lue (réponse 202 vide). Le mandat a pris fin à son entrée à l'Assemblée nationale (commentaire de la déclaration).
+- Coordinateur de LFI : l'article de franceinfo est « avec AFP » et LCP (2026) cite l'AFP. Deux médias distincts à trois ans d'écart, mais l'AFP est à l'origine des deux : à trancher. Date retenue : désignation « à l'unanimité » annoncée le 5 janvier 2023 (intérim auparavant, date non sourcée).
+- Parcours avant 2017 (Parti de gauche, mandats régionaux) non documenté par une source officielle ; aucune recherche presse effectuée (quota).
+- Page HATVP https://www.hatvp.fr/pages_nominatives/bompard-manuel-16003 : la capture Wayback est une redirection (302) ; les PDF archivés sont cités à la place.
+
+## Clémence Guetté
+
+Recherche du 2026-09-24, mode `details`. Sources principales : déclarations HATVP du 7 août 2024 (https://www.hatvp.fr/livraison/dossiers/guette-clemence-dia30925-depute-94.pdf) et du 11 septembre 2025 (https://www.hatvp.fr/livraison/dossiers/guette-clemence-diam34106-depute-94.pdf), pages « fonctions » de l'Assemblée nationale (https://www.assemblee-nationale.fr/dyn/deputes/PA795310/fonctions et https://www.assemblee-nationale.fr/dyn/deputes/PA795310/fonctions?archive=oui). Identité : nom + date de naissance (15 mars 1991, identique HATVP / Assemblée) + mandat de députée.
+
+- [ ] poste · Vice-présidente · Assemblée nationale · depuis le 19/07/2024 — https://www.assemblee-nationale.fr/dyn/deputes/PA795310/fonctions?archive=oui · https://www.assemblee-nationale.fr/dyn/deputes/PA795310/fonctions
+- [ ] poste · Députée du Val-de-Marne (2e circ.) · Assemblée nationale · depuis le 22/06/2022 — mêmes sources
+- [ ] poste · Salariée de l'espace programme · La France insoumise · 04/2022 – 06/2022 — https://www.hatvp.fr/livraison/dossiers/guette-clemence-dia30925-depute-94.pdf
+- [ ] poste · Salariée de l'espace programme · AFCP JLM 2022 · 07/2021 – 04/2022 — idem
+- [ ] poste · Salariée de l'espace programme · La France insoumise · 10/2020 – 06/2021 — idem
+- [ ] poste · Secrétaire générale de groupe · Groupe LFI à l'Assemblée nationale · 01/2019 – 06/2022 — idem
+- [ ] board · Fondation européenne For the People (co-directrice) · depuis 08/2025 (officiel) — https://www.hatvp.fr/livraison/dossiers/guette-clemence-diam34106-depute-94.pdf
+- [ ] board · Institut La Boétie (présidente) · depuis 07/2023 (officiel) — https://www.hatvp.fr/livraison/dossiers/guette-clemence-dia30925-depute-94.pdf · https://www.hatvp.fr/livraison/dossiers/guette-clemence-diam34106-depute-94.pdf
+- [ ] board · Institut La Boétie (trésorière) · 09/2022 – 07/2023 (officiel) — https://www.hatvp.fr/livraison/dossiers/guette-clemence-dia30925-depute-94.pdf
+- [ ] board · L'Institut des transitions citoyennes (trésorière) · 11/2019 – 06/2020 (officiel) — idem
+- [ ] board · Parti Union populaire (membre du bureau) · 04/2022 – 12/2023 (officiel) — idem
+- [ ] board · La France insoumise (coordinatrice de l'espace « bataille idéologique et programme ») · depuis 09/2019 (officiel) — idem + modificative
+- [ ] other · Le Monde diplomatique (article) · 11/2024 (officiel) — https://www.hatvp.fr/livraison/dossiers/guette-clemence-diam34106-depute-94.pdf
+- [ ] other · New York University, Remarque Institute (colloque) · 09/2024 (officiel) — idem
+
+### Homonymes écartés
+
+- Annuaire des entreprises : une Clémence Guetté née en mars 2000, associée d'une SCI, est une autre personne (date de naissance différente). Aucun mandat de dirigeant au nom de Clémence Guetté née en 1991.
+- Répertoire AGORA : aucune inscription à son nom comme représentante d'intérêts (seuls des noms voisins, « Aguettaz », « Aguettant », sans rapport).
+
+### Points d'attention
+
+- Vice-présidence de l'Assemblée : deux périodes sur les pages officielles (19/07/2024 – 30/09/2025, puis depuis le 01/10/2025). Regroupées en une seule entrée depuis le 19/07/2024. À scinder si besoin.
+- Plusieurs intérêts « board » sont des fonctions de parti ou d'institut lié au parti (LFI, Parti Union populaire, Institut La Boétie) : ils figurent dans la rubrique « fonctions dirigeantes » de la déclaration, d'où leur classement.
+- « Fondation européenne For the People » : nom repris tel quel de la déclaration.
+- Archives Wayback des deux PDF HATVP : même horodatage (20260803195130) ; ouvrir les deux liens pour vérifier.
+
+## Hadrien Clouet
+
+Recherche du 2026-09-24, mode `details`. Sources principales : déclarations HATVP du 3 septembre 2024 (https://www.hatvp.fr/livraison/dossiers/clouet-hadrien-dia31896-depute-31.pdf) et du 29 septembre 2024 (https://www.hatvp.fr/livraison/dossiers/clouet-hadrien-diam31897-depute-31.pdf), fiche et page « fonctions » de l'Assemblée nationale (https://www.assemblee-nationale.fr/dyn/deputes/PA793736). Identité : nom + date de naissance (13 juillet 1991, identique HATVP / Assemblée) + mandat de député.
+
+- [ ] poste · Vice-président de la commission des affaires sociales · Assemblée nationale · depuis le 20/07/2024 — https://www.assemblee-nationale.fr/dyn/deputes/PA793736/fonctions
+- [ ] poste · Député de la Haute-Garonne (1re circ.) · Assemblée nationale · depuis le 22/06/2022 — https://www.assemblee-nationale.fr/dyn/deputes/PA793736 · https://www.hatvp.fr/livraison/dossiers/clouet-hadrien-dia31896-depute-31.pdf
+- [ ] poste · Chercheur postdoctoral · Université Paris Nanterre · 01/2022 – 06/2022 — https://www.hatvp.fr/livraison/dossiers/clouet-hadrien-dia31896-depute-31.pdf
+- [ ] poste · Enseignant vacataire · Université de Brest · 09/2021 – 12/2021 — idem
+- [ ] poste · Chercheur postdoctoral · Université fédérale de Toulouse · 01/2021 – 12/2021 — idem
+- [ ] poste · Enseignant vacataire · Université Paris Descartes · 11/2020 – 01/2021 — idem
+- [ ] poste · Vacataire d'enseignement · Université de Strasbourg · 10/2020 – 12/2020 — idem
+- [ ] poste · Enseignant vacataire · Université Paris Sorbonne · 10/2020 – 12/2020 — idem
+- [ ] poste · Chercheur postdoctoral · CNRS · 01/2020 – 12/2020 — idem
+- [ ] poste · Enseignant vacataire · Université de Reims · 10/2019 – 12/2021 — idem
+- [ ] poste · Chercheur postdoctoral · Fondation nationale des sciences politiques · 01/2019 – 12/2019 — idem
+- [ ] poste · ATER · Conservatoire national des arts et métiers · 09/2016 – 08/2018 — idem
+- [ ] poste · Doctorant contractuel · Sciences Po · 01/2016 – 08/2016 — idem
+- [ ] other · Le Monde diplomatique (recensions, activité conservée) · depuis 07/2022 (officiel) — https://www.hatvp.fr/livraison/dossiers/clouet-hadrien-diam31897-depute-31.pdf
+
+### Homonymes écartés
+
+- Répertoire AGORA : Arnaud Clouet (Fédération nationale porcine) et Benoît Clouet (ABO Energy) sont d'autres personnes. Hadrien Clouet n'y figure pas comme représentant d'intérêts.
+- Annuaire des entreprises : aucun mandat de dirigeant au nom d'Hadrien Clouet.
+
+### Points d'attention
+
+- Le poste à la Fondation nationale des sciences politiques (2019) ne figure que dans la déclaration initiale ; la modificative le retire (plus de cinq ans), il est conservé ici car sourcé.
+- Vice-présidence de la commission des affaires sociales : la page officielle découpe la fonction en périodes successives depuis le 20/07/2024, sans interruption notable ; une seule entrée. L'archive Wayback de la page « fonctions » date du 15 mars 2026.
+- Recension ponctuelle de 07/2024 (déclaration initiale) remplacée dans la modificative par « recensions » 07/2022 – 08/2024, conservée : entrée unique sans date de fin.
+- Carrière universitaire listée telle que déclarée ; la liste des vacations peut être regroupée si elle paraît trop détaillée.

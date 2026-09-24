@@ -15,5 +15,16 @@ teamSources:
     url: https://lcp.fr/actualites/primaire-a-gauche-pourquoi-raphael-glucksmann-et-les-autres-candidats-s-opposent-sur-les
     archive: https://web.archive.org/web/20260903082535/https://lcp.fr/actualites/primaire-a-gauche-pourquoi-raphael-glucksmann-et-les-autres-candidats-s-opposent-sur-les
     date: 2026-09-02
+career:
+  - position: "Sénateur de Paris (vice-président du Sénat et vice-président de la commission des affaires culturelles au cours de ses mandats)"
+    organization: "Sénat"
+    start: 2004-09-26
+    end: 2023-10-01
+    sources:
+      - title: "M. David Assouline, ancien sénateur de Paris"
+        outlet: Sénat
+        url: https://www.senat.fr/senateur/assouline_david04059m.html
+        archive: https://web.archive.org/web/20260227034733/https://www.senat.fr/senateur/assouline_david04059m.html
+        date: 2026-02-27
 updatedAt: 2026-09-24
 ---

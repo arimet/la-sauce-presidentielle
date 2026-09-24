@@ -10,6 +10,7 @@ export const GET: APIRoute = async () => {
   const entries: [string, Date?][] = [
     ['/', latest],
     ['/programmes/', latest],
+    ['/entourage/', latest],
     ['/methodologie/'],
     ...people.map((p): [string, Date] => [`/${p.id}/`, p.data.updatedAt]),
   ];

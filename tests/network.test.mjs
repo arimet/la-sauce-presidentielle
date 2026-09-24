@@ -42,3 +42,21 @@ test('lists a person once per organization and ignores people without candidate'
   const [org] = sharedOrganizations(people);
   assert.deepEqual(org.people.map((p) => p.id), ['a', 'b']);
 });
+
+import { layoutGraph } from '../src/lib/network.ts';
+
+test('lays out candidates, people and shared organizations inside the viewBox, deterministically', () => {
+  const people = [person('a', 'x', ['Org']), person('b', 'y', ['Org']), person('c', 'y', ['Autre'])];
+  const graph = layoutGraph(sharedOrganizations(people), 600, 400);
+  const ids = graph.nodes.map((n) => `${n.kind}:${n.id}`).sort();
+  assert.deepEqual(ids, ['candidate:x', 'candidate:y', 'org:org', 'person:a', 'person:b']);
+  assert.equal(graph.links.length, 4); // a–x, a–Org, b–y, b–Org
+  for (const n of graph.nodes) {
+    assert.ok(n.x >= 0 && n.x <= 600 && n.y >= 0 && n.y <= 400, `${n.id} at ${n.x},${n.y}`);
+  }
+  assert.deepEqual(layoutGraph(sharedOrganizations(people), 600, 400), graph);
+});
+
+test('an empty network has no nodes', () => {
+  assert.deepEqual(layoutGraph([], 600, 400), { nodes: [], links: [] });
+});

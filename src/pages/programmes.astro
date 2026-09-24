@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import Measures from '../components/Measures.astro';
+import CandidateFilter from '../components/CandidateFilter.astro';
 import { getPeople, type PersonEntry } from '../lib/people';
 import { formatDate } from '../lib/facts';
 import { THEMES, THEME_LABELS, PROGRAMME_STATUS_LABELS } from '../lib/programme';
@@ -26,18 +27,7 @@ const headStyle = (p: PersonEntry) =>
       {THEMES.map((theme) => <a href={`#${theme}`}>{THEME_LABELS[theme]}</a>)}
     </nav>
 
-    {/* Hidden without JS: every candidate is shown. */}
-    <div class="filter" role="group" aria-labelledby="filter-label" hidden>
-      <p id="filter-label" class="filter-label">Comparer <span class="filter-count" aria-live="polite"></span></p>
-      <div class="chips">
-        {candidates.map((p) => (
-          <button type="button" class="chip" data-slug={p.id} aria-pressed="true" style={`--party: ${p.data.partyColor}; --ink: ${textOn(p.data.partyColor!)}`}>{p.data.name}</button>
-        ))}
-      </div>
-      <p class="filter-actions">
-        <button type="button" data-all>Tous</button> · <button type="button" data-none>Aucun</button>
-      </p>
-    </div>
+    <CandidateFilter candidates={candidates} storageKey="programmes-hidden" label="Comparer" />
 
     <section class="block" aria-labelledby="sources">
       <h2 id="sources">Sources et vérification</h2>
@@ -45,7 +35,7 @@ const headStyle = (p: PersonEntry) =>
         {candidates.map((p) => {
           const programme = p.data.programme;
           return (
-            <article class="card" data-slug={p.id}>
+            <article class="card" data-slug={p.id} data-candidates={p.id}>
               <a class="head" href={url(`/${p.id}`)} style={headStyle(p)}>
                 {p.data.photo ? <img src={url(p.data.photo)} alt="" loading="lazy" decoding="async" /> : <span class="head-initials" aria-hidden="true">{initials(p.data.name)}</span>}
                 <span class="who"><strong>{p.data.name}</strong><span>{p.data.party}</span></span>
@@ -77,7 +67,7 @@ const headStyle = (p: PersonEntry) =>
         <h2 id={`${theme}-title`}>{THEME_LABELS[theme]}</h2>
         <div class="lineup">
           {candidates.map((p) => (
-            <article class="card" data-slug={p.id}>
+            <article class="card" data-slug={p.id} data-candidates={p.id}>
               <a class="head" href={url(`/${p.id}#programme`)} style={headStyle(p)}>
                 {p.data.photo ? <img src={url(p.data.photo)} alt="" loading="lazy" decoding="async" /> : <span class="head-initials" aria-hidden="true">{initials(p.data.name)}</span>}
                 <span class="who"><strong>{p.data.name}</strong><span>{p.data.party}</span></span>
@@ -98,39 +88,13 @@ const headStyle = (p: PersonEntry) =>
       // for every block, applied before first paint. Without JS the order stays alphabetical.
       (() => {
         ${orderJs}
-        const lists = [...document.querySelectorAll('.lineup'), document.querySelector('.chips')];
+        const lists = [...document.querySelectorAll('.lineup')];
         const order = sessionOrder([...lists[0].children].map((el) => el.dataset.slug));
         lists.forEach((list) => {
           const bySlug = new Map([...list.children].map((el) => [el.dataset.slug, el]));
           order.forEach((slug) => list.appendChild(bySlug.get(slug)));
         });
       })();`} />
-    <script is:inline>
-      // Candidate filter: toggles which candidates every block shows; remembered on this device.
-      (() => {
-        const KEY = 'programmes-hidden';
-        const filter = document.querySelector('.filter');
-        const chips = [...filter.querySelectorAll('.chip')];
-        let hidden;
-        try { hidden = new Set(JSON.parse(localStorage.getItem(KEY)) || []); } catch { hidden = new Set(); }
-        const apply = () => {
-          chips.forEach((c) => c.setAttribute('aria-pressed', String(!hidden.has(c.dataset.slug))));
-          document.querySelectorAll('.lineup .card').forEach((card) => { card.hidden = hidden.has(card.dataset.slug); });
-          const shown = chips.length - hidden.size;
-          filter.querySelector('.filter-count').textContent = `· ${shown} sur ${chips.length} affichés`;
-          try { localStorage.setItem(KEY, JSON.stringify([...hidden])); } catch {}
-        };
-        chips.forEach((c) => c.addEventListener('click', () => {
-          const slug = c.dataset.slug;
-          hidden.has(slug) ? hidden.delete(slug) : hidden.add(slug);
-          apply();
-        }));
-        filter.querySelector('[data-all]').addEventListener('click', () => { hidden.clear(); apply(); });
-        filter.querySelector('[data-none]').addEventListener('click', () => { hidden = new Set(chips.map((c) => c.dataset.slug)); apply(); });
-        filter.hidden = false;
-        apply();
-      })();
-    </script>
   </div>
 </Base>
 
@@ -152,25 +116,6 @@ const headStyle = (p: PersonEntry) =>
   .card { display: flex; flex-direction: column; min-width: 0; }
   .card[hidden] { display: none; }
 
-  .filter { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
-  .filter-label, .filter-actions { margin: 0; font-family: var(--mono); font-size: var(--step--1); text-transform: uppercase; letter-spacing: .04em; }
-  .filter-count { color: var(--muted); }
-  .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .6rem; }
-  .chip {
-    min-height: 2.75rem; padding: .35rem .8rem; border: 1px solid var(--party); border-radius: 999px;
-    background: transparent; color: var(--fg); font: inherit; font-size: .875rem; cursor: pointer;
-  }
-  /* State must read at a glance: a filled chip with a check mark is shown,
-     an outlined grey chip with a plus sign is hidden. */
-  .chip::before { display: inline-block; width: 1rem; margin-right: .35rem; font-weight: 700; text-align: center; }
-  .chip[aria-pressed='true'] { background: var(--party); border-color: var(--party); color: var(--ink); font-weight: 600; }
-  .chip[aria-pressed='true']::before { content: '✓'; }
-  .chip[aria-pressed='false'] { background: transparent; border: 1px dashed var(--muted); color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
-  .chip[aria-pressed='false']::before { content: '+'; text-decoration: none; }
-  .chip[aria-pressed='false']:hover { color: var(--fg); border-color: var(--fg); }
-  .chip:focus-visible { outline-offset: 2px; }
-  .filter-actions { margin-top: .6rem; color: var(--muted); }
-  .filter-actions button { min-height: 2.75rem; padding: 0 .25rem; border: 0; background: none; color: var(--fg); font: inherit; text-decoration: underline; text-underline-offset: .2em; cursor: pointer; }
   .head {
     display: flex; align-items: flex-end; gap: .6rem; min-height: 4.5rem; padding: .5rem .75rem 0; overflow: hidden;
     background: var(--party); color: var(--ink); text-decoration: none;

@@ -1,0 +1,172 @@
+---
+import Base from '../layouts/Base.astro';
+import CandidateFilter from '../components/CandidateFilter.astro';
+import { getPeople, MAX_TEAM } from '../lib/people';
+import { layoutGraph, sharedOrganizations, NODE_RADIUS } from '../lib/network';
+import { NO_FAULT_NOTICE } from '../lib/entourage';
+import { textOn } from '../lib/color';
+import { url } from '../lib/url';
+import aliases from '../data/organization-aliases.json';
+
+const people = await getPeople();
+const candidates = people
+  .filter((p) => p.data.role === 'candidate')
+  .sort((a, b) => a.data.name.localeCompare(b.data.name, 'fr'));
+const byId = new Map(people.map((p) => [p.id, p]));
+const team = people.filter((p) => p.data.role === 'team');
+const shared = sharedOrganizations(team, aliases);
+const [W, H] = [1000, 640];
+const graph = layoutGraph(shared, W, H);
+const color = (slug: string) => byId.get(slug)?.data.partyColor ?? '#1c1b19';
+const nodeHref = (kind: string, id: string) => (kind === 'org' ? `#org-${id}` : url(`/${id}`));
+---
+<Base title="L'entourage des candidats" description="Qui entoure les candidats à la présidentielle 2027 : équipes de campagne, parcours et liens d'intérêts déclarés, et les organisations communes à plusieurs entourages.">
+  <div class="wrap wide">
+    <h1>L'entourage des candidats</h1>
+    <p class="intro">Les rôles clés des campagnes (direction, finances, programme, porte-parole, conseillers nommés publiquement), au plus {MAX_TEAM} personnes par candidat, avec les mêmes critères pour tous. Pour chacune : son rôle public, son parcours documenté depuis 2012 et ses liens d'intérêts déclarés, chaque élément sourcé et archivé. Cette page montre les organisations où ont travaillé, ou avec lesquelles ont des liens, des membres de plusieurs entourages. <a href={url('/methodologie#entourage')}>Méthode et droit d'opposition</a>.</p>
+    <p class="notice">{NO_FAULT_NOTICE} Passer par la même organisation n'implique aucune entente.</p>
+
+    <CandidateFilter candidates={candidates} storageKey="entourage-hidden" label="Afficher" />
+
+    {shared.length === 0
+      ? <p class="empty">Aucune organisation commune à plusieurs entourages n'est recensée pour l'instant. Les entourages sont en cours de recherche et de relecture.</p>
+      : (
+        <>
+          <section class="block" aria-labelledby="graph-title">
+            <h2 id="graph-title">Le réseau</h2>
+            <p class="legend">
+              <span><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="#1c1b19" /></svg> Candidat</span>
+              <span><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="5" fill="#1c1b19" /></svg> Membre de l'entourage</span>
+              <span><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="14" height="14" fill="none" stroke="#1c1b19" stroke-width="2" /></svg> Organisation en commun</span>
+            </p>
+            <div class="graph-scroll">
+              {/* Positions computed at build time (d3-force); the same content is in the table below. */}
+              <svg class="graph" viewBox={`0 0 ${W} ${H}`} role="img" aria-labelledby="graph-title graph-desc">
+                <desc id="graph-desc">Graphe reliant chaque candidat aux membres de son entourage, et ces membres aux organisations qu'ils ont en commun avec l'entourage d'un autre candidat. Le tableau qui suit donne les mêmes informations.</desc>
+                <g class="links">
+                  {graph.links.map((l) => <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} data-ends={`${l.source}|${l.target}`} data-candidates={l.candidates.join(' ')} />)}
+                </g>
+                {graph.nodes.map((n) => {
+                  const r = NODE_RADIUS[n.kind];
+                  const label = n.kind === 'candidate' ? byId.get(n.id)?.data.name ?? n.id : n.label;
+                  return (
+                    <a class={`node ${n.kind}`} href={nodeHref(n.kind, n.id)} data-key={`${n.kind}:${n.id}`} data-candidates={n.candidates.join(' ')}>
+                      <title>{n.kind === 'person' ? `${label}, ${byId.get(n.id)?.data.teamPosition} (${byId.get(n.candidates[0])?.data.name})` : label}</title>
+                      {n.kind === 'org'
+                        ? <rect x={n.x - r} y={n.y - r} width={2 * r} height={2 * r} />
+                        : <circle cx={n.x} cy={n.y} r={r} fill={color(n.candidates[0])} />}
+                      {n.kind === 'candidate' && <text x={n.x} y={n.y + 4} class="initials" fill={textOn(color(n.id))}>{label.split(' ').map((w) => w[0]).join('').slice(0, 2)}</text>}
+                      <text x={n.x} y={n.y + r + 14} class="label">{label}</text>
+                    </a>
+                  );
+                })}
+              </svg>
+            </div>
+          </section>
+
+          <section class="block" aria-labelledby="table-title">
+            <h2 id="table-title">Organisations en commun <span class="count">{shared.length}</span></h2>
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th scope="col">Organisation</th><th scope="col">Entourages</th><th scope="col">Personnes</th></tr></thead>
+                <tbody>
+                  {shared.map((org) => (
+                    <tr id={`org-${graph.nodes.find((n) => n.kind === 'org' && n.label === org.name)?.id}`} data-candidates={org.candidates.join(' ')}>
+                      <th scope="row">{org.name}</th>
+                      <td>
+                        <ul class="who">
+                          {org.candidates.map((c) => <li><span class="dot" style={`--party: ${color(c)}`} aria-hidden="true"></span><a href={url(`/${c}#entourage`)}>{byId.get(c)?.data.name}</a></li>)}
+                        </ul>
+                      </td>
+                      <td>
+                        <ul class="who">
+                          {org.people.map((p) => <li data-candidates={p.data.candidateOf}><a href={url(`/${p.id}`)}>{p.data.name}</a>, {p.data.teamPosition}</li>)}
+                        </ul>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      )}
+  </div>
+</Base>
+<script>
+  // Hover or focus a node: highlight it, its links and its neighbours.
+  const svg = document.querySelector<SVGSVGElement>('.graph');
+  if (svg) {
+    const nodes = [...svg.querySelectorAll<SVGAElement>('.node')];
+    const byKey = new Map(nodes.map((n) => [n.dataset.key!, n]));
+    const lines = [...svg.querySelectorAll<SVGLineElement>('.links line')].map((el) => ({
+      el,
+      ends: el.dataset.ends!.split('|').map((k) => byKey.get(k)),
+    }));
+    const focus = (node: SVGAElement | null) => {
+      svg.classList.toggle('focused', !!node);
+      const near = new Set([node]);
+      lines.forEach(({ el, ends }) => {
+        const on = !!node && ends.includes(node);
+        el.classList.toggle('on', on);
+        if (on) ends.forEach((e) => near.add(e));
+      });
+      nodes.forEach((n) => n.classList.toggle('on', !!node && near.has(n)));
+    };
+    nodes.forEach((n) => {
+      n.addEventListener('pointerenter', () => focus(n));
+      n.addEventListener('focus', () => focus(n));
+      n.addEventListener('pointerleave', () => focus(null));
+      n.addEventListener('blur', () => focus(null));
+    });
+  }
+</script>
+<style>
+  .wide { max-width: 84rem; }
+  h1 {
+    margin: 2.5rem 0 .75rem; font-family: var(--serif); font-weight: 500; font-size: clamp(2.2rem, 6vw, 3.8rem);
+    line-height: 1.05; letter-spacing: -.015em; text-wrap: balance;
+  }
+  .intro { max-width: 65ch; margin: 0; color: var(--muted); }
+  .notice { max-width: 65ch; margin: 1rem 0 0; padding-left: .75rem; border-left: 1px solid var(--line); font-weight: 600; font-size: .925rem; }
+  .empty { margin: 2rem 0 0; color: var(--muted); font-style: italic; }
+  .block { padding-top: 3rem; scroll-margin-top: 1rem; }
+  .block > h2 { margin: 0 0 1rem; font-family: var(--serif); font-weight: 500; font-size: var(--step-3); line-height: 1.1; letter-spacing: -.01em; }
+  .count { font-family: var(--mono); font-size: var(--step--1); color: var(--muted); vertical-align: super; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: .4rem 1.25rem; margin: 0 0 .75rem; font-size: .8rem; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: .4rem; }
+  .legend svg { width: 1rem; height: 1rem; }
+  /* Phones: the graph keeps a readable size and scrolls sideways inside its frame; the table is the main view. */
+  .graph-scroll { overflow-x: auto; border: 1px solid var(--line); }
+  .graph { display: block; width: 100%; min-width: 40rem; height: auto; }
+  .graph [hidden] { display: none; }
+  .links line { stroke: var(--line); stroke-width: 1.5; }
+  .node { cursor: pointer; }
+  .node rect { fill: var(--bg); stroke: var(--fg); stroke-width: 2.5; }
+  .node circle { stroke: var(--bg); stroke-width: 2; }
+  .node text { font-family: var(--sans, inherit); text-anchor: middle; pointer-events: none; }
+  .node .label { font-size: 13px; fill: var(--fg); paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+  .node .initials { font-family: var(--serif); font-style: italic; font-size: 16px; }
+  .candidate .label { font-weight: 600; font-size: 15px; }
+  .person .label { opacity: 0; }
+  .node:focus-visible { outline: none; }
+  .node:focus-visible circle, .node:focus-visible rect { stroke: var(--fg); stroke-width: 4; }
+  .focused .node:not(.on), .focused .links line:not(.on) { opacity: .15; }
+  .focused .links line.on { stroke: var(--fg); }
+  .focused .person.on .label { opacity: 1; }
+  @media (prefers-reduced-motion: no-preference) {
+    .node, .links line, .node .label { transition: opacity .15s; }
+  }
+
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: .925rem; }
+  th, td { text-align: left; vertical-align: top; padding: .75rem .75rem .75rem 0; border-top: 1px solid var(--line); }
+  thead th { font-family: var(--mono); font-size: var(--step--1); font-weight: 500; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border-top: 0; }
+  tbody th { font-weight: 600; min-width: 12rem; }
+  tr[hidden], li[hidden] { display: none; }
+  tr:target { background: color-mix(in srgb, var(--fg) 6%, transparent); }
+  .who { list-style: none; margin: 0; padding: 0; }
+  .who li + li { margin-top: .3rem; }
+  .dot { display: inline-block; width: .6rem; height: .6rem; margin-right: .4rem; border-radius: 50%; background: var(--party); }
+</style>

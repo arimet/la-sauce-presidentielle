@@ -1,0 +1,80 @@
+---
+// Candidate chips (the tab's session order, see src/lib/order.js). Hides every element whose
+// `data-candidates` (space-separated slugs) lists no shown candidate; remembered on this device.
+import type { PersonEntry } from '../lib/people';
+import { textOn } from '../lib/color';
+import orderSrc from '../lib/order.js?raw';
+
+interface Props {
+  candidates: PersonEntry[];
+  storageKey: string;
+  label: string;
+}
+const { candidates, storageKey, label } = Astro.props;
+const orderJs = orderSrc.replace(/^export /m, '');
+---
+{/* Hidden without JS: everything is shown. */}
+<div class="filter" role="group" aria-labelledby="filter-label" data-key={storageKey} hidden>
+  <p id="filter-label" class="filter-label">{label} <span class="filter-count" aria-live="polite"></span></p>
+  <div class="chips">
+    {candidates.map((p) => (
+      <button type="button" class="chip" data-slug={p.id} aria-pressed="true" style={`--party: ${p.data.partyColor}; --ink: ${textOn(p.data.partyColor!)}`}>{p.data.name}</button>
+    ))}
+  </div>
+  <p class="filter-actions">
+    <button type="button" data-all>Tous</button> · <button type="button" data-none>Aucun</button>
+  </p>
+</div>
+<script is:inline set:html={`
+  (() => {
+    ${orderJs}
+    const filter = document.querySelector('.filter');
+    const box = filter.querySelector('.chips');
+    const chips = [...box.children];
+    const bySlug = new Map(chips.map((c) => [c.dataset.slug, c]));
+    sessionOrder(chips.map((c) => c.dataset.slug)).forEach((slug) => box.appendChild(bySlug.get(slug)));
+    const KEY = filter.dataset.key;
+    let hidden;
+    try { hidden = new Set(JSON.parse(localStorage.getItem(KEY)) || []); } catch { hidden = new Set(); }
+    const apply = () => {
+      chips.forEach((c) => c.setAttribute('aria-pressed', String(!hidden.has(c.dataset.slug))));
+      document.querySelectorAll('[data-candidates]').forEach((el) => {
+        el.toggleAttribute('hidden', el.dataset.candidates.split(' ').every((s) => hidden.has(s)));
+      });
+      filter.querySelector('.filter-count').textContent = '· ' + (chips.length - hidden.size) + ' sur ' + chips.length + ' affichés';
+      try { localStorage.setItem(KEY, JSON.stringify([...hidden])); } catch {}
+      document.dispatchEvent(new Event('candidatefilter'));
+    };
+    chips.forEach((c) => c.addEventListener('click', () => {
+      const slug = c.dataset.slug;
+      hidden.has(slug) ? hidden.delete(slug) : hidden.add(slug);
+      apply();
+    }));
+    filter.querySelector('[data-all]').addEventListener('click', () => { hidden.clear(); apply(); });
+    filter.querySelector('[data-none]').addEventListener('click', () => { hidden = new Set(chips.map((c) => c.dataset.slug)); apply(); });
+    filter.hidden = false;
+    // Filtered elements come after the chips in the page.
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply);
+    else apply();
+  })();`} />
+<style>
+  .filter { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
+  .filter-label, .filter-actions { margin: 0; font-family: var(--mono); font-size: var(--step--1); text-transform: uppercase; letter-spacing: .04em; }
+  .filter-count { color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .6rem; }
+  .chip {
+    min-height: 2.75rem; padding: .35rem .8rem; border: 1px solid var(--party); border-radius: 999px;
+    background: transparent; color: var(--fg); font: inherit; font-size: .875rem; cursor: pointer;
+  }
+  /* State must read at a glance: a filled chip with a check mark is shown,
+     an outlined grey chip with a plus sign is hidden. */
+  .chip::before { display: inline-block; width: 1rem; margin-right: .35rem; font-weight: 700; text-align: center; }
+  .chip[aria-pressed='true'] { background: var(--party); border-color: var(--party); color: var(--ink); font-weight: 600; }
+  .chip[aria-pressed='true']::before { content: '✓'; }
+  .chip[aria-pressed='false'] { background: transparent; border: 1px dashed var(--muted); color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
+  .chip[aria-pressed='false']::before { content: '+'; text-decoration: none; }
+  .chip[aria-pressed='false']:hover { color: var(--fg); border-color: var(--fg); }
+  .chip:focus-visible { outline-offset: 2px; }
+  .filter-actions { margin-top: .6rem; color: var(--muted); }
+  .filter-actions button { min-height: 2.75rem; padding: 0 .25rem; border: 0; background: none; color: var(--fg); font: inherit; text-decoration: underline; text-underline-offset: .2em; cursor: pointer; }
+</style>

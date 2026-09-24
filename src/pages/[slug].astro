@@ -6,6 +6,8 @@ import { formatDate, needsPresumptionNotice, groupByType, splitLede, GROUP_LABEL
 import { textOn, inkTone } from '../lib/color';
 import { THEMES, THEME_LABELS, PROGRAMME_STATUS_LABELS } from '../lib/programme';
 import Measures from '../components/Measures.astro';
+import SourceList from '../components/SourceList.astro';
+import { formatPeriod, groupInterests, INTEREST_LABELS, NO_FAULT_NOTICE } from '../lib/entourage';
 import { url, absoluteUrl } from '../lib/url';
 import { readFileSync } from 'node:fs';
 
@@ -39,8 +41,17 @@ const { person, color, candidate, team, candidates } = Astro.props;
 // Previous / next candidate, wrapping around (team member pages have none).
 const at = candidates.findIndex((c) => c.slug === person.id);
 const prev = candidates.at(at - 1), next = candidates[(at + 1) % candidates.length];
-const { name, party, photo, photoCredit, teamPosition, updatedAt, facts, programme } = person.data;
+const { name, party, role, photo, photoCredit, teamPosition, updatedAt, facts, programme, career = [], interests = [] } = person.data;
 const groups = groupByType(facts);
+const interestGroups = groupInterests(interests);
+// Every navigable section, in page order (poster, chips and table of contents).
+type Section = { id: string; label: string; count?: number };
+const sections: Section[] = [
+  ...(career.length ? [{ id: 'parcours', label: 'Parcours', count: career.length }] : []),
+  ...(interests.length ? [{ id: 'interets', label: 'Liens d’intérêts', count: interests.length }] : []),
+  ...groups.map(([group, groupFacts]) => ({ id: group, label: GROUP_LABELS[group][groupFacts.length > 1 ? 1 : 0], count: groupFacts.length })),
+  ...(role === 'candidate' ? [{ id: 'programme', label: 'Programme' }] : []),
+];
 // Neutral structured data: identity and affiliation only, never facts.
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -66,11 +77,10 @@ const [photoW, photoH] = png ? [png.readUInt32BE(16), png.readUInt32BE(20)] : []
     <p class="ghost" aria-hidden="true">{name}</p>
     <h1 class="visually-hidden">{name}</h1>
     <nav class="categories" aria-label="Catégories de faits et programme">
-      {groups.length === 0 && <><span class="cat">Aucun fait recensé<span class="slash" aria-hidden="true">&nbsp;/</span></span>{' '}</>}
-      {groups.map(([group, groupFacts], i) => (
-        <><span class="cat" style={`--i: ${i}`}><a href={`#${group}`}>{GROUP_LABELS[group][groupFacts.length > 1 ? 1 : 0]}<sup>({groupFacts.length})</sup></a><span class="slash" aria-hidden="true">&nbsp;/</span></span>{' '}</>
+      {sections.map((sec, i) => (
+        <><span class="cat" style={`--i: ${i}`}><a href={`#${sec.id}`}>{sec.label}{sec.count !== undefined && <sup>({sec.count})</sup>}</a>{(i < sections.length - 1 || !groups.length) && <span class="slash" aria-hidden="true">&nbsp;/</span>}</span>{' '}</>
       ))}
-      <span class="cat" style={`--i: ${Math.max(groups.length, 1)}`}><a href="#programme">Programme</a></span>
+      {groups.length === 0 && <span class="cat" style={`--i: ${sections.length}`}>Aucun fait recensé</span>}
     </nav>
     <p class="aside aside-left">{name}<br />{party}{teamPosition && <><br />{teamPosition}</>}
       {candidate && <><br />Équipe de <a href={url(`/${candidate.id}`)}>{candidate.data.name}</a></>}</p>
@@ -81,12 +91,9 @@ const [photoW, photoH] = png ? [png.readUInt32BE(16), png.readUInt32BE(20)] : []
     {photoCredit && <p class="credit">{photoCredit}</p>}
   </section>
 
-  {groups.length > 0 && (
+  {sections.length > 1 && (
     <nav class="chips" aria-label="Aller à une catégorie">
-      {groups.map(([group, groupFacts]) => (
-        <a href={`#${group}`}>{GROUP_LABELS[group][groupFacts.length > 1 ? 1 : 0]} <span class="count">{groupFacts.length}</span></a>
-      ))}
-      <a href="#programme">Programme</a>
+      {sections.map((sec) => <a href={`#${sec.id}`}>{sec.label} {sec.count !== undefined && <span class="count">{sec.count}</span>}</a>)}
     </nav>
   )}
 
@@ -94,10 +101,7 @@ const [photoW, photoH] = png ? [png.readUInt32BE(16), png.readUInt32BE(20)] : []
     <aside class="toc">
       <nav aria-label="Sommaire">
         <ol>
-          {groups.map(([group, groupFacts]) => (
-            <li><a href={`#${group}`}>{GROUP_LABELS[group][groupFacts.length > 1 ? 1 : 0]} <span class="count">{groupFacts.length}</span></a></li>
-          ))}
-          <li><a href="#programme">Programme</a></li>
+          {sections.map((sec) => <li><a href={`#${sec.id}`}>{sec.label} {sec.count !== undefined && <span class="count">{sec.count}</span>}</a></li>)}
         </ol>
       </nav>
       <p class="tools">
@@ -113,6 +117,48 @@ const [photoW, photoH] = png ? [png.readUInt32BE(16), png.readUInt32BE(20)] : []
       )}
     </aside>
     <div class="content">
+    {career.length > 0 && (
+      <section id="parcours" class="group">
+        <h2>Parcours <span class="count">{career.length}</span></h2>
+        <p class="group-intro">Postes publics et professionnels documentés depuis 2012, du plus récent au plus ancien.</p>
+        <ol class="timeline">
+          {career.map((job) => (
+            <li>
+              <p class="badges"><span class="period">{formatPeriod(job) || 'Dates non documentées'}</span>{!job.end && job.start && <span class="badge">En cours</span>}</p>
+              <h3>{job.position}</h3>
+              <p class="org">{job.organization}</p>
+              <SourceList sources={job.sources} />
+            </li>
+          ))}
+        </ol>
+      </section>
+    )}
+
+    {interests.length > 0 && (
+      <section id="interets" class="group">
+        <h2>Liens d’intérêts déclarés <span class="count">{interests.length}</span></h2>
+        <p class="notice no-fault">{NO_FAULT_NOTICE}</p>
+        {interestGroups.map(([kind, list]) => (
+          <section class="interest-kind">
+            <h3 class="kind">{INTEREST_LABELS[kind]}</h3>
+            <ul class="interests">
+              {list.map((i) => (
+                <li>
+                  <p class="badges">
+                    <span class="badge">{i.official ? 'Source officielle' : 'Presse'}</span>
+                    {formatPeriod(i) && <span class="period">{formatPeriod(i)}</span>}
+                  </p>
+                  <p class="org"><strong>{i.organization}</strong></p>
+                  <p>{i.description}</p>
+                  <SourceList sources={i.sources} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </section>
+    )}
+
     {groups.map(([group, groupFacts]) => (
       <section id={group} class="group">
         <h2>{GROUP_LABELS[group][1]} <span class="count">{groupFacts.length}</span></h2>
@@ -163,7 +209,7 @@ const [photoW, photoH] = png ? [png.readUInt32BE(16), png.readUInt32BE(20)] : []
       </section>
     ))}
 
-    <section id="programme" class="group programme">
+    {role === 'candidate' && <section id="programme" class="group programme">
       <h2>Programme</h2>
       {programme
         ? (
@@ -191,7 +237,7 @@ const [photoW, photoH] = png ? [png.readUInt32BE(16), png.readUInt32BE(20)] : []
           </>
         )
         : <p class="group-intro">Programme non encore recensé</p>}
-    </section>
+    </section>}
 
     {team.length > 0 && (
       <section class="group">
@@ -458,6 +504,15 @@ const [photoW, photoH] = png ? [png.readUInt32BE(16), png.readUInt32BE(20)] : []
   .theme { border-top: 1px solid var(--line); padding: 1.1rem 0 1.4rem; }
   .theme.empty { border-top-style: dashed; } /* text already muted: « Pas de proposition identifiée » */
   .theme h3 { margin: 0 0 .6rem; font-family: var(--mono); font-size: var(--step--1); font-weight: 500; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  .timeline, .interests { list-style: none; padding: 0; margin: 1rem 0 0; }
+  .timeline > li, .interests > li { border-top: 1px solid var(--line); padding: 1.1rem 0; max-width: 65ch; }
+  .timeline h3 { font-size: var(--step-1); font-weight: 600; line-height: 1.3; margin: .4rem 0 .1rem; }
+  .timeline .org, .interests .org { margin: 0; }
+  .interests .org + p { margin: .25rem 0 0; }
+  .period { font-family: var(--mono); font-size: var(--step--1); }
+  .no-fault { max-width: 65ch; margin: 0 0 1rem; font-weight: 600; }
+  .interest-kind + .interest-kind { margin-top: 1.5rem; }
+  .kind { margin: 1.5rem 0 0; font-family: var(--mono); font-size: var(--step--1); font-weight: 500; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
   .team { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: 1rem; margin-top: 1rem; }
 
   @media print {

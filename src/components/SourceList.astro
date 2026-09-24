@@ -1,0 +1,22 @@
+---
+import { formatDate } from '../lib/facts';
+
+interface Props {
+  sources: { title: string; outlet: string; url: string; archive: string; date: Date }[];
+}
+const { sources } = Astro.props;
+---
+<ul class="sources">
+  {sources.map((s) => (
+    <li>
+      <a href={s.url} rel="noopener">{s.title}</a>, {s.outlet}, {formatDate(s.date)}{' '}
+      (<a href={s.archive} rel="noopener">archive</a>)
+    </li>
+  ))}
+</ul>
+<style>
+  .sources { font-size: .875rem; color: var(--muted); padding-left: 1.2rem; margin: .5rem 0 0; overflow-wrap: anywhere; }
+  .sources li + li { margin-top: .5rem; }
+  .sources a { text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+  .sources a:hover { text-decoration-color: currentColor; }
+</style>

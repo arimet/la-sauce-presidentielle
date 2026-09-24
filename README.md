@@ -91,7 +91,7 @@ Either run `/research Firstname Lastname` in Claude Code, or write the file by h
    ---
    name: Camille Exemple
    party: Parti Exemple
-   role: candidate            # or "team" with candidateOf: <slug> and teamPosition
+   role: candidate            # or "team" with candidateOf: <slug>, teamPosition, teamSources (see /entourage)
    partyColor: "#1D4ED8"
    photo: /photos/camille-exemple.png
    photoCredit: "Author, Wikimedia Commons, CC BY-SA 4.0, détourée"

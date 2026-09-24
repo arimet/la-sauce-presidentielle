@@ -91,7 +91,7 @@ Lancez `/research Prénom Nom` dans Claude Code, ou écrivez le fichier à la ma
    ---
    name: Camille Exemple
    party: Parti Exemple
-   role: candidate            # ou "team" avec candidateOf: <slug> et teamPosition
+   role: candidate            # ou "team" avec candidateOf: <slug>, teamPosition, teamSources (voir /entourage)
    partyColor: "#1D4ED8"
    photo: /photos/camille-exemple.png
    photoCredit: "Auteur, Wikimedia Commons, CC BY-SA 4.0, détourée"

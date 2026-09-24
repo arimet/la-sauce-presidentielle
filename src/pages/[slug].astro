@@ -11,6 +11,11 @@ import { readFileSync } from 'node:fs';
 
 export async function getStaticPaths() {
   const people = await getPeople();
+  // Alphabetical here; the client applies the tab's session order (src/lib/order.js).
+  const candidates = people
+    .filter((p) => p.data.role === 'candidate')
+    .sort((a, b) => a.data.name.localeCompare(b.data.name, 'fr'))
+    .map((p) => ({ slug: p.id, name: p.data.name, href: url(`/${p.id}`) }));
   return people.map((person) => ({
     params: { slug: person.id },
     props: {
@@ -18,6 +23,7 @@ export async function getStaticPaths() {
       color: personColor(person, people),
       candidate: people.find((p) => p.id === person.data.candidateOf),
       team: people.filter((p) => p.data.candidateOf === person.id),
+      candidates: person.data.role === 'candidate' ? candidates : [],
     },
   }));
 }
@@ -27,8 +33,12 @@ interface Props {
   color: string;
   candidate?: PersonEntry;
   team: PersonEntry[];
+  candidates: { slug: string; name: string; href: string }[];
 }
-const { person, color, candidate, team } = Astro.props;
+const { person, color, candidate, team, candidates } = Astro.props;
+// Previous / next candidate, wrapping around (team member pages have none).
+const at = candidates.findIndex((c) => c.slug === person.id);
+const prev = candidates.at(at - 1), next = candidates[(at + 1) % candidates.length];
 const { name, party, photo, photoCredit, teamPosition, updatedAt, facts, programme } = person.data;
 const groups = groupByType(facts);
 // Neutral structured data: identity and affiliation only, never facts.
@@ -94,6 +104,13 @@ const [photoW, photoH] = png ? [png.readUInt32BE(16), png.readUInt32BE(20)] : []
         {groups.length > 0 && <button type="button" class="toggle-all" hidden>Tout déplier</button>}
         <a class="to-top" href="#top">Retour en haut</a>
       </p>
+      {candidates.length > 1 && (
+        <nav class="siblings" aria-label="Autres candidats" data-current={person.id} data-candidates={JSON.stringify(candidates)}>
+          <a rel="prev" href={prev!.href}><span class="dir">‹ Candidat précédent</span> <span class="who">{prev!.name}</span></a>
+          <a rel="next" href={next!.href}><span class="dir">Candidat suivant ›</span> <span class="who">{next!.name}</span></a>
+          <p class="keys-hint">← → pour changer de candidat</p>
+        </nav>
+      )}
     </aside>
     <div class="content">
     {groups.map(([group, groupFacts]) => (
@@ -187,6 +204,35 @@ const [photoW, photoH] = png ? [png.readUInt32BE(16), png.readUInt32BE(20)] : []
   </div>
 </Base>
 <script>
+  import { sessionOrder } from '../lib/order.js';
+
+  // Previous / next candidate in the tab's session order (alphabetical if none yet), wrapping
+  // around; ← / → follow them, unless typing or a modifier key is held (browser shortcuts).
+  const siblings = document.querySelector<HTMLElement>('.siblings');
+  if (siblings) {
+    type Candidate = { slug: string; name: string; href: string };
+    const all: Candidate[] = JSON.parse(siblings.dataset.candidates!);
+    const bySlug = new Map(all.map((c) => [c.slug, c]));
+    const order = sessionOrder(all.map((c) => c.slug), false);
+    const at = order.indexOf(siblings.dataset.current!);
+    const links = {
+      prev: siblings.querySelector<HTMLAnchorElement>('[rel=prev]')!,
+      next: siblings.querySelector<HTMLAnchorElement>('[rel=next]')!,
+    };
+    const set = (link: HTMLAnchorElement, c: Candidate) => {
+      link.href = c.href;
+      link.querySelector('.who')!.textContent = c.name;
+    };
+    set(links.prev, bySlug.get(order.at(at - 1)!)!);
+    set(links.next, bySlug.get(order[(at + 1) % order.length])!);
+    document.addEventListener('keydown', (e) => {
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+      if ((e.target as HTMLElement).closest('input, textarea, select, [contenteditable]')) return;
+      if (e.key === 'ArrowRight') location.href = links.next.href;
+      else if (e.key === 'ArrowLeft') location.href = links.prev.href;
+    });
+  }
+
   // Highlight the chip / table-of-contents entry of the category being read.
   const links = [...document.querySelectorAll<HTMLAnchorElement>('.chips a, .toc nav a')];
   if (links.length) {
@@ -343,7 +389,7 @@ const [photoW, photoH] = png ? [png.readUInt32BE(16), png.readUInt32BE(20)] : []
   .fact .notice { margin: .75rem 0 0; }
 
   /* Table of contents and page tools. Phones and tablets: the chips bar navigates, only the toggle shows. */
-  .toc nav, .tools .to-top { display: none; }
+  .toc nav, .tools .to-top, .siblings { display: none; }
   .tools { margin: 0; min-height: 2.5rem; padding-top: 1.5rem; display: flex; justify-content: flex-end; }
   .toggle-all, .toc a, .tools a {
     font-family: var(--mono); font-size: var(--step--1); text-transform: uppercase; letter-spacing: .04em;
@@ -372,6 +418,16 @@ const [photoW, photoH] = png ? [png.readUInt32BE(16), png.readUInt32BE(20)] : []
     .tools { flex-direction: column; align-items: flex-start; gap: .5rem; padding-top: 1.5rem; }
     .tools .to-top { display: inline-block; padding-block: .5rem; color: var(--muted); }
     .tools .to-top:hover { color: var(--fg); }
+    /* Scoped under .toc to override its nav and link styles. */
+    .toc .siblings { display: flex; flex-direction: column; gap: .75rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
+    .toc .siblings a {
+      display: flex; flex-direction: column; gap: .1rem; padding: 0; margin: 0; border: 0;
+      font: inherit; font-size: .9rem; text-transform: none; letter-spacing: normal; color: var(--fg); line-height: 1.3;
+    }
+    .siblings .dir { font-family: var(--mono); font-size: .65rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+    .siblings a:hover .who { text-decoration: underline; }
+    .keys-hint { margin: 0; font-family: var(--mono); font-size: .65rem; letter-spacing: .04em; color: var(--muted); }
+    @media (pointer: coarse) { .keys-hint { display: none; } }
   }
   /* Phones and tablets: a category bar that sticks once the poster has scrolled away (it starts right below the fold). */
   .chips { display: none; }

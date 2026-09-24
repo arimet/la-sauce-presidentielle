@@ -1,7 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import PersonCard from '../components/PersonCard.astro';
-import { getPeople, personColor, type PersonEntry } from '../lib/people';
+import { getPeople, personColor, MAX_TEAM, type PersonEntry } from '../lib/people';
 import { formatDate, needsPresumptionNotice, groupByType, splitLede, GROUP_LABELS, TYPE_LABELS, STATUS_LABELS } from '../lib/facts';
 import { textOn, inkTone } from '../lib/color';
 import { THEMES, THEME_LABELS, PROGRAMME_STATUS_LABELS } from '../lib/programme';
@@ -50,7 +50,7 @@ const sections: Section[] = [
   ...(career.length ? [{ id: 'parcours', label: 'Parcours', count: career.length }] : []),
   ...(interests.length ? [{ id: 'interets', label: 'Liens d’intérêts', count: interests.length }] : []),
   ...groups.map(([group, groupFacts]) => ({ id: group, label: GROUP_LABELS[group][groupFacts.length > 1 ? 1 : 0], count: groupFacts.length })),
-  ...(role === 'candidate' ? [{ id: 'programme', label: 'Programme' }] : []),
+  ...(role === 'candidate' ? [{ id: 'entourage', label: 'Entourage', count: team.length }, { id: 'programme', label: 'Programme' }] : []),
 ];
 // Neutral structured data: identity and affiliation only, never facts.
 const jsonLd = {
@@ -209,6 +209,16 @@ const [photoW, photoH] = png ? [png.readUInt32BE(16), png.readUInt32BE(20)] : []
       </section>
     ))}
 
+    {role === 'candidate' && (
+      <section id="entourage" class="group">
+        <h2>Entourage <span class="count">{team.length}</span></h2>
+        <p class="group-intro">Rôles clés de la campagne nommés publiquement (au plus {MAX_TEAM} par candidat), leur parcours et leurs liens d’intérêts déclarés. {NO_FAULT_NOTICE}</p>
+        {team.length > 0
+          ? <div class="team">{team.map((member) => <PersonCard person={member} />)}</div>
+          : <p class="group-intro">Entourage non encore recensé</p>}
+      </section>
+    )}
+
     {role === 'candidate' && <section id="programme" class="group programme">
       <h2>Programme</h2>
       {programme
@@ -239,12 +249,6 @@ const [photoW, photoH] = png ? [png.readUInt32BE(16), png.readUInt32BE(20)] : []
         : <p class="group-intro">Programme non encore recensé</p>}
     </section>}
 
-    {team.length > 0 && (
-      <section class="group">
-        <h2>Équipe</h2>
-        <div class="team">{team.map((member) => <PersonCard person={member} />)}</div>
-      </section>
-    )}
     <p class="back"><a href={url('/')}>Retour aux candidats</a><a href="#top">Retour en haut</a></p>
     </div>
   </div>

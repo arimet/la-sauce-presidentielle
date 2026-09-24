@@ -7,7 +7,7 @@ interface Props {
   person: PersonEntry;
 }
 const { person } = Astro.props;
-const { name, party, photo, teamPosition, facts } = person.data;
+const { name, party, photo, teamPosition, facts, career = [], interests = [] } = person.data;
 const initials = name.split(' ').map((w) => w[0]).join('').slice(0, 2);
 ---
 <a class="card" href={url(`/${person.id}`)}>
@@ -15,15 +15,20 @@ const initials = name.split(' ').map((w) => w[0]).join('').slice(0, 2);
   <span>
     <strong>{name}</strong>
     <span class="meta">{teamPosition ?? party}</span>
-    <span class="meta">{summarizeCounts(facts)}</span>
+    {career.slice(0, 3).map((job) => <span class="job">{job.position}, {job.organization}</span>)}
+    <span class="meta">
+      {interests.length === 0 ? 'Aucun lien d’intérêt recensé' : interests.length === 1 ? '1 lien d’intérêt déclaré' : `${interests.length} liens d’intérêts déclarés`}
+      {facts.length > 0 && <> · {summarizeCounts(facts)}</>}
+    </span>
   </span>
 </a>
 <style>
-  .card { display: flex; gap: 1rem; align-items: center; padding: 1rem; border: 1px solid var(--line); border-radius: .25rem; text-decoration: none; }
+  .card { display: flex; gap: 1rem; align-items: flex-start; padding: 1rem; border: 1px solid var(--line); border-radius: .25rem; text-decoration: none; }
   strong { font-weight: 600; letter-spacing: -.01em; }
   .card:hover { border-color: var(--fg); }
   img, .initials { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; flex: none; }
   .initials { display: grid; place-items: center; background: var(--line); font-family: var(--serif); font-style: italic; font-size: var(--step-2); }
+  .job { display: block; font-size: .875rem; line-height: 1.35; margin-top: .2rem; }
   .meta { display: block; color: var(--muted); font-size: .875rem; }
   @media (prefers-reduced-motion: no-preference) {
     .card { transition: border-color .2s; }

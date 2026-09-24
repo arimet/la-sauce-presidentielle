@@ -4,6 +4,9 @@ import { getPeople } from '../lib/people';
 import { summarizeCounts } from '../lib/facts';
 import { textOn, inkTone } from '../lib/color';
 import { url, absoluteUrl } from '../lib/url';
+import orderSrc from '../lib/order.js?raw';
+
+const orderJs = orderSrc.replace(/^export /m, ''); // inlined: runs before first paint
 
 const candidates = (await getPeople())
   .filter((p) => p.data.role === 'candidate')
@@ -58,38 +61,33 @@ const initials = (name: string) => name.split(' ').map((w) => w[0]).join('').sli
     </nav>
     <button class="strip-arrow next" type="button" tabindex="-1" aria-hidden="true">›</button>
     </div>
-    <script is:inline>
-      // Fairness: shuffle candidates (slides, thumbs and intro stripes together) on every load,
-      // before first paint. The intro stays first; without JS the order stays alphabetical.
+    <script is:inline set:html={`
+      // Session order (see src/lib/order.js) for slides, thumbs and intro stripes together, before
+      // first paint. The intro stays first; without JS the order stays alphabetical.
       (() => {
+        ${orderJs}
         const stage = document.currentScript.closest('.stage');
         const strip = stage.querySelector('.strip');
         const wrap = strip.parentElement;
         const slides = [...stage.querySelectorAll('.slide:not(.intro)')];
-        // The intro thumb never shuffles: it stays first, alongside the intro slide.
+        // The intro thumb never moves: it stays first, alongside the intro slide.
         const thumbs = [...strip.querySelectorAll('.thumb:not(.intro-thumb)')];
         const stripes = stage.querySelector('.stripes');
         const stripeEls = [...stripes.children];
-        const order = slides.map((_, i) => i);
-        const rand = new Uint32Array(order.length);
-        crypto.getRandomValues(rand);
-        for (let i = order.length - 1; i > 0; i--) {
-          const j = rand[i] % (i + 1);
-          [order[i], order[j]] = [order[j], order[i]];
-        }
+        const slugs = slides.map((s) => s.dataset.slug);
         const total = slides.length;
         const pad = (n) => String(n).padStart(2, '0');
-        order.forEach((k, pos) => {
+        sessionOrder(slugs).forEach((slug, pos) => {
+          const k = slugs.indexOf(slug);
           const slide = slides[k];
           stage.insertBefore(slide, wrap);
           strip.appendChild(thumbs[k]);
           stripes.appendChild(stripeEls[k]);
           stripeEls[k].style.setProperty('--i', pos);
           slide.style.setProperty('--progress', (pos + 1) / total);
-          slide.querySelector('.counter').textContent = `${pad(pos + 1)} / ${pad(total)}`;
+          slide.querySelector('.counter').textContent = pad(pos + 1) + ' / ' + pad(total);
         });
-      })();
-    </script>
+      })();`} />
   </section>
 </Base>
 

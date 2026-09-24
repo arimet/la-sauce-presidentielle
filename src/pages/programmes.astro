@@ -1,0 +1,198 @@
+---
+import Base from '../layouts/Base.astro';
+import Measures from '../components/Measures.astro';
+import { getPeople, type PersonEntry } from '../lib/people';
+import { formatDate } from '../lib/facts';
+import { THEMES, THEME_LABELS, PROGRAMME_STATUS_LABELS } from '../lib/programme';
+import { textOn, inkTone } from '../lib/color';
+import { url } from '../lib/url';
+
+// Alphabetical without JS; shuffled client-side below.
+const candidates = (await getPeople())
+  .filter((p) => p.data.role === 'candidate')
+  .sort((a, b) => a.data.name.localeCompare(b.data.name, 'fr'));
+const initials = (name: string) => name.split(' ').map((w) => w[0]).join('').slice(0, 2);
+const headStyle = (p: PersonEntry) =>
+  `--party: ${p.data.partyColor}; --ink: ${textOn(p.data.partyColor!)}; --outline: url(#ink-md-${inkTone(p.data.partyColor!)})`;
+---
+<Base title="Les programmes, thème par thème" description="Les propositions des candidats à la présidentielle 2027, thème par thème, d'après leurs sources officielles.">
+  <div class="wrap wide">
+    <h1>Les programmes, thème par thème</h1>
+    <p class="intro">Les propositions des candidats, tirées uniquement de leurs sources officielles (programme publié, site du candidat ou du parti, déclaration de candidature), classées selon les mêmes huit thèmes pour tous. Au plus trois mesures par thème, reformulées sans jugement ; la date de vérification figure pour chaque candidat. L'ordre des candidats change à chaque visite.</p>
+
+    <nav class="theme-nav" aria-label="Thèmes">
+      {THEMES.map((theme) => <a href={`#${theme}`}>{THEME_LABELS[theme]}</a>)}
+    </nav>
+
+    {/* Hidden without JS: every candidate is shown. */}
+    <div class="filter" role="group" aria-labelledby="filter-label" hidden>
+      <p id="filter-label" class="filter-label">Comparer</p>
+      <div class="chips">
+        {candidates.map((p) => (
+          <button type="button" class="chip" data-slug={p.id} aria-pressed="true" style={`--party: ${p.data.partyColor}; --ink: ${textOn(p.data.partyColor!)}`}>{p.data.name}</button>
+        ))}
+      </div>
+      <p class="filter-actions">
+        <button type="button" data-all>Tous</button> · <button type="button" data-none>Aucun</button>
+      </p>
+    </div>
+
+    <section class="block" aria-labelledby="sources">
+      <h2 id="sources">Sources et vérification</h2>
+      <div class="lineup">
+        {candidates.map((p) => {
+          const programme = p.data.programme;
+          return (
+            <article class="card" data-slug={p.id}>
+              <a class="head" href={url(`/${p.id}`)} style={headStyle(p)}>
+                {p.data.photo ? <img src={url(p.data.photo)} alt="" loading="lazy" decoding="async" /> : <span class="head-initials" aria-hidden="true">{initials(p.data.name)}</span>}
+                <span class="who"><strong>{p.data.name}</strong><span>{p.data.party}</span></span>
+              </a>
+              <div class="body">
+                {programme
+                  ? (
+                    <>
+                      <p class="status"><span class="badge">{PROGRAMME_STATUS_LABELS[programme.status]}</span></p>
+                      <p class="checked">Vérifié le <time datetime={programme.checkedAt.toISOString().slice(0, 10)}>{formatDate(programme.checkedAt)}</time></p>
+                      <ul class="sources">
+                        {programme.sources.map((s) => (
+                          <li><a href={s.url} rel="noopener">{s.title}</a>, {s.outlet}, {formatDate(s.date)} (<a href={s.archive} rel="noopener">archive</a>)</li>
+                        ))}
+                      </ul>
+                    </>
+                  )
+                  : <p class="none">Programme non encore recensé</p>}
+                <p class="more"><a href={url(`/${p.id}#programme`)}>Voir la page de {p.data.name}</a></p>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+
+    {THEMES.map((theme) => (
+      <section class="block" id={theme} aria-labelledby={`${theme}-title`}>
+        <h2 id={`${theme}-title`}>{THEME_LABELS[theme]}</h2>
+        <div class="lineup">
+          {candidates.map((p) => (
+            <article class="card" data-slug={p.id}>
+              <a class="head" href={url(`/${p.id}#programme`)} style={headStyle(p)}>
+                {p.data.photo ? <img src={url(p.data.photo)} alt="" loading="lazy" decoding="async" /> : <span class="head-initials" aria-hidden="true">{initials(p.data.name)}</span>}
+                <span class="who"><strong>{p.data.name}</strong><span>{p.data.party}</span></span>
+              </a>
+              <div class="body">
+                {p.data.programme
+                  ? <Measures measures={p.data.programme.themes[theme]} />
+                  : <p class="none">Programme non encore recensé</p>}
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    ))}
+
+    <script is:inline>
+      // Fairness: one random candidate order (Fisher–Yates, crypto RNG) on every load, the same for
+      // every block, applied before first paint. Without JS the order stays alphabetical.
+      (() => {
+        const lineups = [...document.querySelectorAll('.lineup')];
+        const n = lineups[0].children.length;
+        const order = [...Array(n).keys()];
+        const rand = new Uint32Array(n);
+        crypto.getRandomValues(rand);
+        for (let i = n - 1; i > 0; i--) {
+          const j = rand[i] % (i + 1);
+          [order[i], order[j]] = [order[j], order[i]];
+        }
+        const chips = document.querySelector('.chips');
+        [...lineups, chips].forEach((list) => {
+          const items = [...list.children];
+          order.forEach((k) => list.appendChild(items[k]));
+        });
+      })();
+    </script>
+    <script is:inline>
+      // Candidate filter: toggles which candidates every block shows; remembered on this device.
+      (() => {
+        const KEY = 'programmes-hidden';
+        const filter = document.querySelector('.filter');
+        const chips = [...filter.querySelectorAll('.chip')];
+        let hidden;
+        try { hidden = new Set(JSON.parse(localStorage.getItem(KEY)) || []); } catch { hidden = new Set(); }
+        const apply = () => {
+          chips.forEach((c) => c.setAttribute('aria-pressed', String(!hidden.has(c.dataset.slug))));
+          document.querySelectorAll('.lineup .card').forEach((card) => { card.hidden = hidden.has(card.dataset.slug); });
+          try { localStorage.setItem(KEY, JSON.stringify([...hidden])); } catch {}
+        };
+        chips.forEach((c) => c.addEventListener('click', () => {
+          const slug = c.dataset.slug;
+          hidden.has(slug) ? hidden.delete(slug) : hidden.add(slug);
+          apply();
+        }));
+        filter.querySelector('[data-all]').addEventListener('click', () => { hidden.clear(); apply(); });
+        filter.querySelector('[data-none]').addEventListener('click', () => { hidden = new Set(chips.map((c) => c.dataset.slug)); apply(); });
+        filter.hidden = false;
+        apply();
+      })();
+    </script>
+  </div>
+</Base>
+
+<style>
+  .wide { max-width: 84rem; }
+  h1 {
+    margin: 2.5rem 0 .75rem; font-family: var(--serif); font-weight: 500; font-size: clamp(2.2rem, 6vw, 3.8rem);
+    line-height: 1.05; letter-spacing: -.015em; text-wrap: balance;
+  }
+  .intro { max-width: 65ch; margin: 0; color: var(--muted); }
+  .theme-nav { display: flex; flex-wrap: wrap; gap: .25rem 1.25rem; margin-top: 1.5rem; font-family: var(--mono); font-size: var(--step--1); text-transform: uppercase; letter-spacing: .04em; }
+  .theme-nav a { padding-block: .4rem; }
+  .block { padding-top: 3rem; scroll-margin-top: 1rem; }
+  .block > h2 { margin: 0 0 1rem; font-family: var(--serif); font-weight: 500; font-size: var(--step-3); line-height: 1.1; letter-spacing: -.01em; }
+
+  /* Cards wrap 3–4 per row; a filtered selection stretches to fill the row. */
+  .lineup { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: 1rem; }
+  .lineup:not(:has(.card:not([hidden])))::after { content: 'Aucun candidat sélectionné.'; color: var(--muted); font-style: italic; }
+  .card { display: flex; flex-direction: column; min-width: 0; }
+  .card[hidden] { display: none; }
+
+  .filter { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
+  .filter-label, .filter-actions { margin: 0; font-family: var(--mono); font-size: var(--step--1); text-transform: uppercase; letter-spacing: .04em; }
+  .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .6rem; }
+  .chip {
+    min-height: 2.75rem; padding: .35rem .8rem; border: 1px solid var(--party); border-radius: 999px;
+    background: transparent; color: var(--fg); font: inherit; font-size: .875rem; cursor: pointer;
+  }
+  .chip::before { content: ''; display: inline-block; width: .6rem; height: .6rem; margin-right: .45rem; border-radius: 50%; background: var(--party); vertical-align: .05em; }
+  .chip[aria-pressed='true'] { background: var(--party); color: var(--ink); }
+  .chip[aria-pressed='true']::before { background: var(--ink); }
+  .chip[aria-pressed='false'] { border-color: var(--line); color: var(--muted); }
+  .chip:focus-visible { outline-offset: 2px; }
+  .filter-actions { margin-top: .6rem; color: var(--muted); }
+  .filter-actions button { min-height: 2.75rem; padding: 0 .25rem; border: 0; background: none; color: var(--fg); font: inherit; text-decoration: underline; text-underline-offset: .2em; cursor: pointer; }
+  .head {
+    display: flex; align-items: flex-end; gap: .6rem; min-height: 4.5rem; padding: .5rem .75rem 0; overflow: hidden;
+    background: var(--party); color: var(--ink); text-decoration: none;
+  }
+  .head img { flex: none; height: 4rem; width: auto; filter: var(--outline); margin-bottom: -3px; }
+  .head-initials { flex: none; align-self: center; font-family: var(--serif); font-style: italic; font-size: var(--step-3); }
+  .who { display: flex; flex-direction: column; padding-bottom: .55rem; line-height: 1.25; min-width: 0; }
+  .who strong { font-weight: 600; letter-spacing: -.01em; }
+  .who span { font-size: .75rem; opacity: .85; }
+  .head:hover strong { text-decoration: underline; }
+  .head:focus-visible { outline-offset: 2px; }
+  .body { flex: 1; padding: .9rem .75rem 1rem; border: 1px solid var(--line); border-top: 0; font-size: .925rem; }
+  .body p { margin: 0; }
+  .status .badge { white-space: normal; }
+  .checked { margin-top: .5rem !important; font-size: .8rem; color: var(--muted); }
+  .sources { margin: .5rem 0 0; padding-left: 1.1rem; font-size: .75rem; color: var(--muted); overflow-wrap: anywhere; }
+  .none { color: var(--muted); font-style: italic; }
+  .more { margin-top: .75rem !important; font-size: .8rem; }
+
+  /* Phones: stacked cards, so every candidate's answer is read without side-scrolling. */
+  @media (max-width: 47.99rem) {
+    .lineup { grid-template-columns: 1fr; gap: .75rem; }
+    .head { min-height: 3.5rem; }
+    .head img { height: 3.25rem; }
+  }
+</style>

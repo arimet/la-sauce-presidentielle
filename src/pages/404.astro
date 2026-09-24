@@ -1,0 +1,16 @@
+---
+import Base from '../layouts/Base.astro';
+import { url } from '../lib/url';
+---
+<Base title="Page introuvable">
+  <article class="wrap">
+    <h1>Page introuvable</h1>
+    <p>Cette page n'existe pas ou a été déplacée.</p>
+    <p class="back"><a href={url('/')}>Retour aux candidats</a></p>
+  </article>
+</Base>
+<style>
+  h1 { font-family: var(--serif); font-weight: 500; font-size: clamp(3rem, 10vw, 6rem); line-height: 1; letter-spacing: -.02em; margin: 3rem 0 1rem; }
+  .back { margin-top: 2rem; font-family: var(--mono); font-size: var(--step--1); text-transform: uppercase; letter-spacing: .04em; }
+  .back a { display: inline-block; padding-block: .75rem; }
+</style>

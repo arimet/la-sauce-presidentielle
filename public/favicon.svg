@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .drop { fill: #141414; }
+    .ink { fill: none; stroke: none; }
+    @media (prefers-color-scheme: dark) {
+      .ink { stroke: #fff; stroke-width: 3; }
+    }
+  </style>
+  <path class="ink" d="M16 2.5C16 2.5 7 13.5 7 20.5A9 9 0 0 0 25 20.5C25 13.5 16 2.5 16 2.5Z" stroke-linejoin="round"/>
+  <path class="drop" d="M16 2.5C16 2.5 7 13.5 7 20.5A9 9 0 0 0 25 20.5C25 13.5 16 2.5 16 2.5Z"/>
+  <ellipse cx="12.2" cy="19.2" rx="1.7" ry="3.2" transform="rotate(20 12.2 19.2)" fill="#fff"/>
+</svg>

@@ -1,0 +1,32 @@
+---
+import type { Programme } from '../schema';
+import { formatDate } from '../lib/facts';
+
+interface Props {
+  measures?: NonNullable<Programme['themes'][keyof Programme['themes']]>;
+}
+const { measures } = Astro.props;
+---
+{measures
+  ? (
+    <ul class="measures">
+      {measures.map(({ text, source: s }) => (
+        <li>
+          <p>{text}</p>
+          <p class="measure-source">
+            <a href={s.url} rel="noopener">{s.title}</a>, {s.outlet}, {formatDate(s.date)} (<a href={s.archive} rel="noopener">archive</a>)
+          </p>
+        </li>
+      ))}
+    </ul>
+  )
+  : <p class="measures-none">Pas de proposition identifiée</p>}
+<style>
+  .measures { list-style: none; padding: 0; margin: 0; }
+  .measures li + li { margin-top: .9rem; }
+  .measures p { margin: 0; }
+  .measure-source { margin-top: .2rem !important; font-size: .75rem; color: var(--muted); overflow-wrap: anywhere; }
+  .measure-source a { text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+  .measure-source a:hover { text-decoration-color: currentColor; }
+  .measures-none { margin: 0; color: var(--muted); font-style: italic; }
+</style>

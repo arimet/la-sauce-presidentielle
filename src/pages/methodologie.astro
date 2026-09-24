@@ -1,0 +1,92 @@
+---
+import Base from '../layouts/Base.astro';
+import { TYPE_LABELS, STATUS_LABELS } from '../lib/facts';
+import { CONTACT_EMAIL_OBFUSCATED } from '../site';
+
+const TYPE_DEFINITIONS = {
+  conviction: "Décision de justice prononçant une peine. Le statut précise si elle est définitive, frappée d'appel ou annulée.",
+  proceeding: 'Procédure judiciaire en cours visant la personne : enquête, mise en examen, renvoi devant un tribunal.',
+  allegation: 'Faits rapportés par au moins deux médias indépendants, sans décision de justice les établissant.',
+  stance: 'Déclaration ou vote public, cité avec sa source primaire.',
+  party: "Polémique ou procédure documentée par au moins deux médias indépendants impliquant un autre membre du parti du candidat (élu, cadre, candidat investi). La personne concernée est nommée ; le candidat n'est pas mis en cause.",
+  context: "Débat public documenté par au moins deux médias indépendants, lié au candidat sans porter sur ses actes ni ses déclarations, par exemple un conflit d'intérêts potentiel soulevé par la presse. La vie privée n'est jamais traitée en tant que telle.",
+} as const;
+
+const STATUS_DEFINITIONS: Record<keyof typeof STATUS_LABELS, string> = {
+  final: "La décision de justice n'est plus susceptible de recours.",
+  appeal: 'La décision de justice a été portée en appel ; elle n\'est pas définitive.',
+  ongoing: "La procédure (enquête, instruction, allégation) est en cours ; aucune décision n'a été rendue.",
+  acquitted: "La personne a été jugée non coupable des faits qui lui étaient reprochés.",
+  dismissed: "Le juge d'instruction a mis fin aux poursuites, faute de charges suffisantes.",
+  dropped: "Le parquet a classé l'affaire sans poursuivre.",
+};
+---
+<Base title="Méthodologie" description="Comment La Sauce Présidentielle sélectionne, source et vérifie les faits.">
+  <article class="wrap">
+  <h1>Méthodologie</h1>
+
+  <h2>Ce que nous recensons</h2>
+  <dl>
+    {(Object.keys(TYPE_LABELS) as (keyof typeof TYPE_LABELS)[]).map((type) => (
+      <>
+        <dt>{TYPE_LABELS[type][0]}</dt>
+        <dd>{TYPE_DEFINITIONS[type]}</dd>
+      </>
+    ))}
+  </dl>
+
+  <h2>Statuts</h2>
+  <dl>
+    {(Object.keys(STATUS_LABELS) as (keyof typeof STATUS_LABELS)[]).map((status) => (
+      <>
+        <dt>{STATUS_LABELS[status]}</dt>
+        <dd>{STATUS_DEFINITIONS[status]}</dd>
+      </>
+    ))}
+  </dl>
+  <p>Les mêmes critères s'appliquent à tous les partis, sans exception.</p>
+  <p>Tant qu'une procédure n'est pas définitive, y compris en appel, la personne est présumée innocente. La suite d'une affaire (relaxe, non-lieu, classement) est toujours indiquée : sur la page de chaque personne, ces faits sont regroupés à part, sous « relaxes, non-lieux ou classements », plutôt que comptés parmi les condamnations, procédures ou allégations.</p>
+
+  <h2>Sources</h2>
+  <p>Chaque fait cite au moins une source : décision de justice, Légifrance, HATVP, agence de presse, média national ou service public audiovisuel. Une allégation exige deux sources indépendantes. Les réseaux sociaux, blogs et sites partisans ne sont jamais une source unique. Chaque lien est archivé sur archive.org.</p>
+
+  <h2>Qui et quoi sont recensés</h2>
+  <p>Les candidats déclarés ou pressentis à l'élection, ainsi que leur équipe de campagne. Sont recensés : les décisions de justice, les procédures judiciaires en cours, les allégations rapportées par au moins deux médias indépendants, et les prises de position publiques, uniquement lorsqu'elles ont provoqué une controverse publique documentée.</p>
+
+  <h2>Programmes</h2>
+  <p>Les propositions sont tirées uniquement de sources officielles : programme publié, site du candidat ou du parti, déclaration de candidature. Elles sont classées selon les mêmes thèmes pour tous les candidats, à raison de trois mesures au plus par thème, reformulées sans jugement. La date de la dernière vérification est affichée. Un candidat qui n'a pas encore publié de programme apparaît avec ses propositions annoncées.</p>
+
+  <h2>Vérification</h2>
+  <p>Une recherche assistée par intelligence artificielle propose des faits. Un humain ouvre chaque source et valide chaque fait avant publication. L'historique de chaque modification est conservé.</p>
+
+  <h2>Mesure d'audience</h2>
+  <p>Ce site utilise GoatCounter, un outil de mesure d'audience sans cookie qui ne collecte aucune donnée personnelle et ne suit pas les visiteurs d'un site à l'autre. Les statistiques sont agrégées et anonymes.</p>
+
+  <h2>Corrections et droit de réponse</h2>
+  <p>Une erreur, une décision de justice plus récente, une réponse à publier : écrivez à <a id="contact-link" data-enc={CONTACT_EMAIL_OBFUSCATED}>l’adresse de contact (activez JavaScript pour l’afficher)</a> en indiquant la page concernée et vos sources, ou ouvrez une <a href="https://github.com/arimet/la-sauce-presidentielle/issues">issue sur GitHub</a>.</p>
+  </article>
+</Base>
+<script is:inline>
+  // No-JS readers see a generic label and the GitHub issues link; this decodes the
+  // address only after load so it never sits in the built HTML in plain form.
+  (function () {
+    var link = document.getElementById('contact-link');
+    if (!link) return;
+    var reversed = atob(link.dataset.enc);
+    var email = reversed.split('').reverse().join('');
+    // Built from parts so the link scheme never appears as one literal
+    // substring in the built HTML, even inside this script.
+    var scheme = ['mail', 'to', ':'].join('');
+    link.href = scheme + email;
+    link.textContent = email;
+  })();
+</script>
+<style>
+  article { max-width: 42rem; }
+  h1 { font-family: var(--serif); font-weight: 500; font-size: clamp(3rem, 10vw, 6rem); line-height: 1; letter-spacing: -.02em; margin: 3rem 0 1rem; }
+  h2 { font-family: var(--serif); font-weight: 500; font-size: var(--step-3); line-height: 1.15; margin: 2.75rem 0 .5rem; }
+  p, dd, li { max-width: 65ch; }
+  dl { margin: 0; }
+  dt { margin-top: 1.25rem; font-family: var(--mono); font-size: var(--step--1); text-transform: uppercase; letter-spacing: .06em; }
+  dd { margin: .2rem 0 0; }
+</style>

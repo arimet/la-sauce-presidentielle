@@ -1,0 +1,160 @@
+---
+import { url } from '../lib/url';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Text color of the full-bleed colored hero the header overlays; omit for a plain header. */
+  ink?: string;
+  footer?: boolean;
+}
+const { title, description = 'Condamnations, procédures et polémiques des candidats à la présidentielle 2027, sourcées et archivées.', ink, footer = true } = Astro.props;
+
+// Self-hosted Google Fonts (SIL OFL, see public/fonts/LICENSE.md), latin +
+// latin-ext subsets only (French needs latin; cyrillic/greek/vietnamese
+// dropped). @font-face descriptors don't reliably support CSS custom
+// properties, so URLs are built as plain strings here instead of via
+// define:vars. Weights that Google served from an identical file
+// (Cormorant 400/500, Schibsted 400/500/600/700) reuse that same file here.
+const font = (file: string) => url(`/fonts/${file}`);
+const LATIN_EXT_RANGE = 'U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF';
+const LATIN_RANGE = 'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD';
+
+const fontFace = (family: string, style: string, weight: string, latinExtFile: string, latinFile: string) => `
+  @font-face {
+    font-family: '${family}'; font-style: ${style}; font-weight: ${weight};
+    font-display: swap; src: url(${font(latinExtFile)}) format('woff2');
+    unicode-range: ${LATIN_EXT_RANGE};
+  }
+  @font-face {
+    font-family: '${family}'; font-style: ${style}; font-weight: ${weight};
+    font-display: swap; src: url(${font(latinFile)}) format('woff2');
+    unicode-range: ${LATIN_RANGE};
+  }`;
+
+const fontFaceCss = [
+  fontFace('Cormorant Garamond', 'italic', '400 500', 'cormorant-garamond-italic-400-latin-ext.woff2', 'cormorant-garamond-italic-400-latin.woff2'),
+  fontFace('Cormorant Garamond', 'normal', '400 500', 'cormorant-garamond-normal-400-latin-ext.woff2', 'cormorant-garamond-normal-400-latin.woff2'),
+  fontFace('IBM Plex Mono', 'normal', '400', 'ibm-plex-mono-400-latin-ext.woff2', 'ibm-plex-mono-400-latin.woff2'),
+  fontFace('IBM Plex Mono', 'normal', '500', 'ibm-plex-mono-500-latin-ext.woff2', 'ibm-plex-mono-500-latin.woff2'),
+  fontFace('Schibsted Grotesk', 'normal', '400 700', 'schibsted-grotesk-latin-ext.woff2', 'schibsted-grotesk-latin.woff2'),
+].join('\n');
+
+// Cel-shading ink outline for cut-out portraits (radius r in CSS px), drawn
+// under the photo. Smooth dilation: blur the alpha with sigma = r/2, then a
+// steep linear alpha ramp re-thresholds it where a straight edge would sit r px
+// out (blurred alpha = Phi(-2) there), with a ~1px anti-aliased transition
+// (slope = 1 / blurred-alpha gradient = sigma / phi(2)). Unlike feMorphology
+// this gives rounded, non-stair-stepped edges.
+// One filter per size and ink tone: ids ink-{sm,md,lg}-{dark,light}, tone from inkTone().
+const PHI_2 = 0.054, CDF_MINUS_2 = 0.0228;
+const OUTLINES = ([['sm', 1.5], ['md', 3.5], ['lg', 5]] as const).flatMap(([size, r]) => {
+  const sigma = r / 2, slope = sigma / PHI_2;
+  return [['dark', '#111'], ['light', '#fff']].map(([tone, color]) =>
+    ({ id: `ink-${size}-${tone}`, sigma, slope: slope.toFixed(2), intercept: (0.5 - slope * CDF_MINUS_2).toFixed(3), color }));
+});
+---
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title ? `${title} · La Sauce Présidentielle` : 'La Sauce Présidentielle'}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href={url('/favicon.svg')} type="image/svg+xml" />
+    <link rel="icon" href={url('/favicon.ico')} sizes="32x32" />
+    <link rel="apple-touch-icon" href={url('/apple-touch-icon.png')} />
+    <style set:html={fontFaceCss}></style>
+    {/* Cookieless audience measurement, production builds only. */}
+    {import.meta.env.PROD && <script is:inline data-goatcounter="https://arimet.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>}
+  </head>
+  <body class:list={{ 'has-hero': ink }} style={ink && `--ink: ${ink}`}>
+    <svg class="svg-defs" width="0" height="0" aria-hidden="true" focusable="false">
+      {OUTLINES.map(({ id, sigma, slope, intercept, color }) => (
+        <filter id={id} x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+          <feGaussianBlur in="SourceAlpha" stdDeviation={sigma} />
+          <feComponentTransfer result="grown"><feFuncA type="linear" slope={slope} intercept={intercept} /></feComponentTransfer>
+          <feFlood flood-color={color} />
+          <feComposite in2="grown" operator="in" result="ink" />
+          <feMerge><feMergeNode in="ink" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+      ))}
+    </svg>
+    <header class="site-header">
+      <a class="logo" href={url('/')}>La Sauce <span class="logo-sub">Présidentielle</span></a>
+      <nav><a href={url('/programmes')}>Programmes</a><a href={url('/methodologie')}>Méthodologie</a></nav>
+    </header>
+    <main><slot /></main>
+    {footer && (
+      <footer class="site-footer">
+        <p>La Sauce Présidentielle · Chaque fait est sourcé et vérifié par un humain. <a href={url('/methodologie')}>Signaler une erreur</a></p>
+        <p>Site réalisé par <a href="https://github.com/arimet" rel="author">Anthony Rimet</a></p>
+      </footer>
+    )}
+    <style is:global>
+      :root {
+        --serif: 'Cormorant Garamond', 'Times New Roman', serif;
+        --sans: 'Schibsted Grotesk', system-ui, sans-serif;
+        --mono: 'IBM Plex Mono', ui-monospace, monospace;
+        /* Type scale (1.25 minor third) */
+        --step--1: .8rem; --step-1: 1.25rem; --step-2: 1.563rem; --step-3: 1.953rem; --step-4: 2.441rem;
+        --header-h: 3.5rem;
+        --ease-out: cubic-bezier(.16, 1, .3, 1);
+        /* Neutral chrome */
+        --bg: #f4f4f2; --fg: #141414; --muted: #5c5c58; --line: #dcdcd8;
+        /* Category badges: distinguishable hues, equal weight (same lightness band, same outline style). */
+        --conviction: #a8302a; --proceeding: #8a5a00; --allegation: #6f5391; --stance: #36648a;
+        font-family: var(--sans); color: var(--fg); background: var(--bg);
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131313; --fg: #ececea; --muted: #a3a39e; --line: #2c2c2a;
+          --conviction: #ef9a93; --proceeding: #e0b061; --allegation: #c2a9e2; --stance: #93bde0;
+        }
+      }
+      body { margin: 0; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+      .wrap { max-width: 60rem; margin: 0 auto; padding: 0 max(1rem, env(safe-area-inset-right)) 0 max(1rem, env(safe-area-inset-left)); }
+      .site-header {
+        height: var(--header-h); box-sizing: border-box; padding: 0 max(1rem, env(safe-area-inset-right)) 0 max(1rem, env(safe-area-inset-left));
+        display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line);
+      }
+      /* Over a colored hero: no background of its own, text in the hero's ink. */
+      .has-hero .site-header { position: absolute; inset: 0 0 auto; z-index: 2; border-bottom-color: transparent; color: var(--ink); }
+      .site-header nav { display: flex; gap: 1.25rem; }
+      .site-header a { padding-block: .75rem; } /* taller tap targets, same look */
+      .logo { font-family: var(--serif); font-style: italic; font-weight: 500; font-size: var(--step-2); text-decoration: none; letter-spacing: -.01em; }
+      .logo-sub { font-size: .72em; }
+      /* Phones: the wordmark stacks on two lines so both nav links fit beside it. */
+      @media (max-width: 30rem) {
+        .site-header .logo { line-height: 1; padding-block: .25rem; }
+        .logo-sub { display: block; }
+      }
+      .site-header nav a, .site-footer { font-family: var(--mono); font-size: var(--step--1); text-transform: uppercase; letter-spacing: .04em; }
+      .site-footer { max-width: 60rem; margin: 4rem auto 0; padding: 1.5rem max(1rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left)); border-top: 1px solid var(--line); color: var(--muted); }
+      a { color: inherit; text-underline-offset: .2em; text-decoration-thickness: 1px; }
+      :focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+      ::selection { background: var(--fg); color: var(--bg); }
+      time { font-variant-numeric: tabular-nums; }
+      .svg-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+      .visually-hidden {
+        position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+      }
+      .badge { display: inline-block; font-family: var(--mono); font-size: .7rem; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; padding: .1rem .45rem; border-radius: .25rem; border: 1px solid currentColor; }
+      .type-conviction { color: var(--conviction); } .type-proceeding { color: var(--proceeding); }
+      .type-allegation { color: var(--allegation); } .type-stance { color: var(--stance); }
+
+      @view-transition { navigation: auto; }
+      @media (prefers-reduced-motion: reduce) {
+        @view-transition { navigation: none; }
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        html { scroll-behavior: smooth; }
+        a { transition: text-decoration-color .2s, opacity .2s; }
+        .has-hero .site-header { transition: color .6s var(--ease-out); }
+        ::view-transition-group(*) { animation-duration: .5s; animation-timing-function: var(--ease-out); }
+      }
+    </style>
+  </body>
+</html>

@@ -1,0 +1,419 @@
+---
+import Base from '../layouts/Base.astro';
+import PersonCard from '../components/PersonCard.astro';
+import { getPeople, type PersonEntry } from '../lib/people';
+import { formatDate, needsPresumptionNotice, groupByType, splitLede, GROUP_LABELS, TYPE_LABELS, STATUS_LABELS } from '../lib/facts';
+import { textOn, inkTone } from '../lib/color';
+import { THEMES, THEME_LABELS, PROGRAMME_STATUS_LABELS } from '../lib/programme';
+import Measures from '../components/Measures.astro';
+import { url } from '../lib/url';
+import { readFileSync } from 'node:fs';
+
+export async function getStaticPaths() {
+  const people = await getPeople();
+  return people.map((person) => ({
+    params: { slug: person.id },
+    props: {
+      person,
+      candidate: people.find((p) => p.id === person.data.candidateOf),
+      team: people.filter((p) => p.data.candidateOf === person.id),
+    },
+  }));
+}
+
+interface Props {
+  person: PersonEntry;
+  candidate?: PersonEntry;
+  team: PersonEntry[];
+}
+const { person, candidate, team } = Astro.props;
+const { name, party, photo, photoCredit, teamPosition, updatedAt, facts, programme } = person.data;
+const color = person.data.partyColor ?? candidate?.data.partyColor ?? '#1c1b19';
+const groups = groupByType(facts);
+let factNumber = 0; // page-wide, for #fact-<n> deep links
+// Intrinsic size from the PNG header, so the portrait box is right before the image loads
+// (and the view-transition snapshot has the image's aspect ratio).
+const png = photo ? readFileSync(`public${photo}`) : undefined;
+const [photoW, photoH] = png ? [png.readUInt32BE(16), png.readUInt32BE(20)] : [];
+---
+<Base title={name} description={`Condamnations, procédures, allégations et prises de position de ${name}, sourcées et archivées.`} ink={textOn(color)}>
+  <section id="top" class="poster" style={`--party: ${color}; --ink: ${textOn(color)}; --r: ${photoW ? (photoW / photoH!).toFixed(3) : 0.75}`}>
+    <p class="ghost" aria-hidden="true">{name}</p>
+    <h1 class="visually-hidden">{name}</h1>
+    <nav class="categories" aria-label="Catégories de faits et programme">
+      {groups.length === 0 && <><span class="cat">Aucun fait recensé<span class="slash" aria-hidden="true">&nbsp;/</span></span>{' '}</>}
+      {groups.map(([group, groupFacts], i) => (
+        <><span class="cat" style={`--i: ${i}`}><a href={`#${group}`}>{GROUP_LABELS[group][groupFacts.length > 1 ? 1 : 0]}<sup>({groupFacts.length})</sup></a><span class="slash" aria-hidden="true">&nbsp;/</span></span>{' '}</>
+      ))}
+      <span class="cat" style={`--i: ${Math.max(groups.length, 1)}`}><a href="#programme">Programme</a></span>
+    </nav>
+    <p class="aside aside-left">{name}<br />{party}{teamPosition && <><br />{teamPosition}</>}
+      {candidate && <><br />Équipe de <a href={url(`/${candidate.id}`)}>{candidate.data.name}</a></>}</p>
+    <p class="aside aside-right">Mis à jour le {formatDate(updatedAt)}</p>
+    {photo
+      ? <img class="portrait" src={url(photo)} alt={name} width={photoW} height={photoH} style={`view-transition-name: photo-${person.id}; --outline: url(#ink-lg-${inkTone(color)})`} />
+      : <span class="portrait initials" aria-hidden="true" style={`view-transition-name: photo-${person.id}; --outline: url(#ink-lg-${inkTone(color)})`}>{name.split(' ').map((w) => w[0]).join('').slice(0, 2)}</span>}
+    {photoCredit && <p class="credit">{photoCredit}</p>}
+  </section>
+
+  {groups.length > 0 && (
+    <nav class="chips" aria-label="Aller à une catégorie">
+      {groups.map(([group, groupFacts]) => (
+        <a href={`#${group}`}>{GROUP_LABELS[group][groupFacts.length > 1 ? 1 : 0]} <span class="count">{groupFacts.length}</span></a>
+      ))}
+      <a href="#programme">Programme</a>
+    </nav>
+  )}
+
+  <div class="wrap page">
+    <aside class="toc">
+      <nav aria-label="Sommaire">
+        <ol>
+          {groups.map(([group, groupFacts]) => (
+            <li><a href={`#${group}`}>{GROUP_LABELS[group][groupFacts.length > 1 ? 1 : 0]} <span class="count">{groupFacts.length}</span></a></li>
+          ))}
+          <li><a href="#programme">Programme</a></li>
+        </ol>
+      </nav>
+      <p class="tools">
+        {groups.length > 0 && <button type="button" class="toggle-all" hidden>Tout déplier</button>}
+        <a class="to-top" href="#top">Retour en haut</a>
+      </p>
+    </aside>
+    <div class="content">
+    {groups.map(([group, groupFacts]) => (
+      <section id={group} class="group">
+        <h2>{GROUP_LABELS[group][1]} <span class="count">{groupFacts.length}</span></h2>
+        {group === 'party' && (
+          <p class="group-intro">Polémiques documentées impliquant d'autres membres du parti. Elles ne sont pas imputées au candidat.</p>
+        )}
+        {group === 'context' && (
+          <p class="group-intro">Débats publics documentés liés au candidat, sans mise en cause de ses actes.</p>
+        )}
+        <ol class="facts">
+          {groupFacts.map((fact) => { const [lede, rest] = splitLede(fact.summary); return (
+            <li class="fact" id={`fact-${++factNumber}`}>
+              <p class="badges">
+                <span class={`badge type-${fact.type}`}>{TYPE_LABELS[fact.type][0]}</span>
+                {fact.status && <span class="badge">{STATUS_LABELS[fact.status]}</span>}
+                <time datetime={fact.date.toISOString().slice(0, 10)}>{formatDate(fact.date)}</time>
+              </p>
+              <h3>{fact.title}</h3>
+              {fact.concerns && (
+                <p class="concerns">Personne concernée : {fact.concerns.name}, {fact.concerns.position}</p>
+              )}
+              <p class="lede">{lede}</p>
+              {fact.concerns && (
+                <p class="notice">Ce fait ne concerne pas personnellement {name}.</p>
+              )}
+              {fact.type === 'context' && (
+                <p class="notice">Ce contexte ne met pas en cause {name}.</p>
+              )}
+              {needsPresumptionNotice(fact) && (
+                <p class="notice">Faits non établis par une décision définitive : la personne est présumée innocente.</p>
+              )}
+              <details class="more">
+                <summary>Détails et {fact.sources.length} source{fact.sources.length > 1 && 's'}</summary>
+                {rest && <p>{rest}</p>}
+                {fact.response && <p class="response"><strong>Réponse :</strong> {fact.response}</p>}
+                <ul class="sources">
+                  {fact.sources.map((s) => (
+                    <li>
+                      <a href={s.url} rel="noopener">{s.title}</a>, {s.outlet}, {formatDate(s.date)}{' '}
+                      (<a href={s.archive} rel="noopener">archive</a>)
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            </li>
+          ); })}
+        </ol>
+      </section>
+    ))}
+
+    <section id="programme" class="group programme">
+      <h2>Programme</h2>
+      {programme
+        ? (
+          <>
+            <p class="badges">
+              <span class="badge">{PROGRAMME_STATUS_LABELS[programme.status]}</span>
+              <span>vérifié le <time datetime={programme.checkedAt.toISOString().slice(0, 10)}>{formatDate(programme.checkedAt)}</time></span>
+            </p>
+            <ul class="sources">
+              {programme.sources.map((s) => (
+                <li>
+                  <a href={s.url} rel="noopener">{s.title}</a>, {s.outlet}, {formatDate(s.date)}{' '}
+                  (<a href={s.archive} rel="noopener">archive</a>)
+                </li>
+              ))}
+            </ul>
+            <div class="themes">
+              {THEMES.map((theme) => (
+                <section class:list={['theme', { empty: !programme.themes[theme] }]}>
+                  <h3>{THEME_LABELS[theme]}</h3>
+                  <Measures measures={programme.themes[theme]} />
+                </section>
+              ))}
+            </div>
+          </>
+        )
+        : <p class="group-intro">Programme non encore recensé</p>}
+    </section>
+
+    {team.length > 0 && (
+      <section class="group">
+        <h2>Équipe</h2>
+        <div class="team">{team.map((member) => <PersonCard person={member} />)}</div>
+      </section>
+    )}
+    <p class="back"><a href={url('/')}>Retour aux candidats</a><a href="#top">Retour en haut</a></p>
+    </div>
+  </div>
+</Base>
+<script>
+  // Highlight the chip / table-of-contents entry of the category being read.
+  const links = [...document.querySelectorAll<HTMLAnchorElement>('.chips a, .toc nav a')];
+  if (links.length) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        links.forEach((c) => {
+          const on = c.hash === `#${e.target.id}`;
+          if (on) c.setAttribute('aria-current', 'true');
+          else c.removeAttribute('aria-current');
+          // Scroll the bar only (scrollIntoView could interrupt the page's own smooth scroll).
+          if (on && c.parentElement!.matches('.chips')) c.parentElement!.scrollLeft = c.offsetLeft - 16;
+        });
+      });
+    }, { rootMargin: '-20% 0px -75% 0px' });
+    new Set(links.map((c) => c.hash)).forEach((h) => { const g = document.getElementById(h.slice(1)); if (g) observer.observe(g); });
+  }
+
+  // Fact details: expand / collapse all, open on deep links, open for printing.
+  const details = [...document.querySelectorAll<HTMLDetailsElement>('.fact details')];
+  const toggle = document.querySelector<HTMLButtonElement>('.toggle-all');
+  if (toggle && details.length) {
+    const sync = () => { toggle.textContent = details.every((d) => d.open) ? 'Tout replier' : 'Tout déplier'; };
+    toggle.addEventListener('click', () => {
+      const open = !details.every((d) => d.open);
+      details.forEach((d) => { d.open = open; });
+      sync();
+    });
+    details.forEach((d) => d.addEventListener('toggle', sync));
+    toggle.hidden = false;
+  }
+  // A shared link to a fact opens it; a link to a category opens its facts on arrival only
+  // (in-page navigation keeps the cards compact).
+  const openTarget = (arrival: boolean) => {
+    const el = location.hash.length > 1 ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
+    if (el?.matches('.fact') || (arrival && el?.matches('.group'))) el.querySelectorAll('details').forEach((d) => { d.open = true; });
+  };
+  openTarget(true);
+  addEventListener('hashchange', () => openTarget(false));
+  let printed: boolean[] = [];
+  addEventListener('beforeprint', () => { printed = details.map((d) => d.open); details.forEach((d) => { d.open = true; }); });
+  addEventListener('afterprint', () => printed.forEach((open, i) => { details[i].open = open; }));
+</script>
+<style>
+  /* Exactly one screen: the facts start right below the fold. */
+  .poster {
+    position: relative; overflow: hidden; isolation: isolate;
+    box-sizing: border-box; height: 100vh; height: 100svh;
+    padding: calc(var(--header-h) + clamp(.5rem, 3svh, 2rem)) 1rem 0;
+    display: grid; column-gap: 1rem; row-gap: clamp(.5rem, 2svh, 1rem);
+    /* The portrait row grows up to the height at which the portrait spans the screen width (a little
+       more, so the shoulders run off the edges); any height left over goes above the text, never
+       between the text and the portrait. --r is the portrait's width / height. */
+    grid-template:
+      "cats cats" minmax(auto, 1fr) "left right" auto
+      "portrait portrait" minmax(0, calc(112vw / var(--r))) "credit credit" auto / 1fr 1fr;
+    background: var(--party); color: var(--ink);
+  }
+  .poster ::selection { background: var(--ink); color: var(--party); }
+  .ghost {
+    position: absolute; z-index: -1; left: 50%; bottom: 8%; translate: -50% 0; margin: 0;
+    font-family: var(--serif); font-style: italic; font-size: 24vw; line-height: 1.1; white-space: nowrap;
+    opacity: .08; user-select: none; pointer-events: none;
+  }
+  /* Small screens: a compact wrapped line, sized on both axes so up to 7 groups always fit. */
+  .categories {
+    grid-area: cats; align-self: end; text-align: center; text-wrap: balance;
+    font-family: var(--serif); font-size: clamp(1.1rem, min(6vw, 3.6svh), 2.25rem); line-height: 1.15; letter-spacing: -.01em;
+  }
+  .cat { display: inline-block; white-space: nowrap; } /* a line never starts with a slash */
+  .categories a { text-decoration: none; display: inline-block; }
+  .categories a::first-letter, .group > h2::first-letter { text-transform: uppercase; }
+  .categories a:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: .12em; }
+  .categories sup { font-size: .45em; font-style: italic; vertical-align: 1em; margin-left: .1em; }
+  .slash { font-weight: 300; }
+  .aside {
+    margin: 0; font-size: .7rem; text-transform: uppercase; letter-spacing: .04em; line-height: 1.4;
+  }
+  .aside-left { grid-area: left; }
+  .aside-right { grid-area: right; text-align: right; align-self: end; }
+  .portrait {
+    grid-area: portrait; justify-self: center; align-self: end;
+    /* Fills its row, box at the image's own ratio (keeps the view-transition morph undistorted). */
+    width: auto; height: 100%; max-width: none; min-height: 0;
+    filter: var(--outline) drop-shadow(.6rem .4rem 0 rgb(0 0 0 / .2));
+  }
+  .initials {
+    display: grid; place-items: end center; height: 100%; aspect-ratio: 3 / 4;
+    font-family: var(--serif); font-style: italic; font-size: clamp(6rem, 30svh, 18rem); line-height: .8;
+  }
+  /* Small screens: an ink band under the portrait, continuing its outline. */
+  .credit {
+    grid-area: credit; position: relative; z-index: 1; margin: calc(-1 * clamp(.5rem, 2svh, 1rem)) -1rem 0;
+    padding: .4rem max(1rem, env(safe-area-inset-right)) max(.4rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+    text-align: center; text-wrap: balance;
+    background: #111; color: #fff;
+    font-family: var(--mono); font-size: .6rem; text-transform: uppercase; letter-spacing: .06em;
+  }
+  /* Wide screens: categories centered above the portrait, name bottom left, date and credit bottom right. */
+  @media (orientation: landscape) and (min-width: 48rem) {
+    .poster {
+      padding: calc(var(--header-h) + clamp(.5rem, 4svh, 2.5rem)) 2.5rem 0;
+      grid-template: "cats cats cats" auto ". . ." minmax(0, 1fr) "left . right" auto "left . credit" auto / 1fr 2fr 1fr;
+      column-gap: 2rem; row-gap: 0;
+    }
+    .categories {
+      max-width: 60rem; justify-self: center; margin-bottom: clamp(.5rem, 3svh, 2rem);
+      font-size: clamp(1.4rem, min(3.2vw, 5.5svh), 3.25rem); line-height: 1.12;
+    }
+    .aside { font-size: var(--step--1); align-self: end; padding-bottom: 1rem; }
+    .aside-left { grid-row: 3 / 5; }
+    .aside-right { padding-bottom: .4rem; }
+    .portrait { grid-area: 2 / 1 / 5 / 4; height: auto; max-width: 50%; max-height: 100%; }
+    .initials { height: min(100%, 40vw); font-size: clamp(8rem, 40svh, 20rem); }
+    .credit { grid-area: credit; margin: 0; padding: 0 0 1rem; text-align: right; background: none; color: inherit; font-size: .55rem; }
+  }
+
+  .group { padding-top: 3.5rem; scroll-margin-top: 1rem; }
+  .group > h2 {
+    margin: 0 0 .5rem; font-family: var(--serif); font-weight: 500; font-size: var(--step-4);
+    line-height: 1.1; letter-spacing: -.01em;
+  }
+  .count { font-family: var(--mono); font-size: var(--step--1); color: var(--muted); vertical-align: super; }
+  .group-intro { max-width: 65ch; color: var(--muted); margin: 0 0 1rem; }
+  .concerns { font-weight: 600; margin: 0 0 .4rem; }
+  .facts { list-style: none; padding: 0; margin: 0; }
+  .fact { border-top: 1px solid var(--line); padding: 1.5rem 0; }
+  .fact h3 { font-size: var(--step-1); font-weight: 600; line-height: 1.3; margin: .6rem 0 .4rem; letter-spacing: -.01em; }
+  .fact > p { max-width: 65ch; }
+  .badges { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin: 0; font-size: .875rem; color: var(--muted); }
+  .badges time { font-family: var(--mono); font-size: var(--step--1); }
+  .notice { font-size: .875rem; border-left: 1px solid var(--line); padding-left: .75rem; color: var(--fg); }
+  .response { color: var(--muted); }
+  .sources { font-size: .875rem; color: var(--muted); padding-left: 1.2rem; overflow-wrap: anywhere; }
+  .sources li + li { margin-top: .5rem; }
+  .sources a { text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+  .sources a:hover { text-decoration-color: currentColor; }
+  .back { margin: 3rem 0 0; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 2rem; font-family: var(--mono); font-size: var(--step--1); text-transform: uppercase; letter-spacing: .04em; }
+  .back a { display: inline-block; padding-block: .75rem; }
+
+  /* Fact cards: a scannable head (badges, title, first sentence, legal notices), details on demand. */
+  .lede { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+  .fact:has(> details[open]) .lede { display: block; }
+  .more { max-width: 65ch; margin-top: .75rem; }
+  .more > summary {
+    display: inline-flex; align-items: center; gap: .5rem; min-height: 2.5rem; cursor: pointer; list-style: none;
+    font-family: var(--mono); font-size: var(--step--1); text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
+  }
+  .more > summary::-webkit-details-marker { display: none; }
+  .more > summary::before { content: '+'; width: 1em; text-align: center; font-size: 1.1rem; line-height: 1; }
+  .more[open] > summary::before { content: '−'; }
+  .more > summary:hover { color: var(--fg); }
+  .more > p:first-of-type { margin-top: .25rem; }
+  .fact .notice { margin: .75rem 0 0; }
+
+  /* Table of contents and page tools. Phones and tablets: the chips bar navigates, only the toggle shows. */
+  .toc nav, .tools .to-top { display: none; }
+  .tools { margin: 0; min-height: 2.5rem; padding-top: 1.5rem; display: flex; justify-content: flex-end; }
+  .toggle-all, .toc a, .tools a {
+    font-family: var(--mono); font-size: var(--step--1); text-transform: uppercase; letter-spacing: .04em;
+  }
+  .toggle-all {
+    min-height: 2.5rem; padding: 0 .9rem; border: 1px solid var(--line); border-radius: 999px;
+    background: none; color: inherit; cursor: pointer;
+  }
+  .toggle-all:hover { border-color: var(--fg); }
+  @media (min-width: 64rem) {
+    .page { max-width: 76rem; display: grid; grid-template-columns: 12rem minmax(0, 1fr); column-gap: 4rem; padding-inline: 2.5rem; }
+    .toc {
+      position: sticky; top: 0; align-self: start; box-sizing: border-box; max-height: 100vh; overflow-y: auto;
+      padding: 4.25rem 0 1rem; /* first entry level with the first section title */
+    }
+    .toc nav { display: block; }
+    .toc ol { list-style: none; margin: 0; padding: 0; border-left: 1px solid var(--line); }
+    .toc a {
+      display: block; padding: .45rem 0 .45rem 1rem; margin-left: -1px; border-left: 2px solid transparent;
+      color: var(--muted); text-decoration: none; line-height: 1.35;
+    }
+    .toc a::first-letter { text-transform: uppercase; }
+    .toc a:hover { color: var(--fg); }
+    .toc a[aria-current] { color: var(--fg); border-left-color: var(--fg); }
+    .toc .count { vertical-align: baseline; font-size: inherit; }
+    .tools { flex-direction: column; align-items: flex-start; gap: .5rem; padding-top: 1.5rem; }
+    .tools .to-top { display: inline-block; padding-block: .5rem; color: var(--muted); }
+    .tools .to-top:hover { color: var(--fg); }
+  }
+  /* Phones and tablets: a category bar that sticks once the poster has scrolled away (it starts right below the fold). */
+  .chips { display: none; }
+  @media (max-width: 63.99rem) {
+    .chips {
+      position: sticky; top: 0; z-index: 3;
+      display: flex; gap: .4rem; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain;
+      padding: .5rem max(1rem, env(safe-area-inset-right)) .5rem max(1rem, env(safe-area-inset-left));
+      background: var(--bg); border-bottom: 1px solid var(--line);
+    }
+    .chips::-webkit-scrollbar { display: none; }
+    .chips a {
+      flex: none; display: inline-flex; align-items: center; gap: .35rem; min-height: 2.5rem; padding: 0 .8rem;
+      border: 1px solid var(--line); border-radius: 999px; text-decoration: none; white-space: nowrap;
+      font-family: var(--mono); font-size: .72rem; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .chips a::first-letter { text-transform: uppercase; }
+    .chips a[aria-current] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+    .chips a[aria-current] .count { color: inherit; }
+    .chips .count { vertical-align: baseline; font-size: inherit; }
+    .chips a:focus-visible { outline-offset: -4px; }
+    .group { scroll-margin-top: 3.75rem; }
+    .content > .group:first-child { padding-top: 1.5rem; }
+    .fact h3 { text-wrap: balance; }
+  }
+  .programme .sources { margin-bottom: 0; }
+  .themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr)); gap: 0 2.5rem; margin-top: 1.5rem; }
+  .theme { border-top: 1px solid var(--line); padding: 1.1rem 0 1.4rem; }
+  .theme.empty { border-top-style: dashed; } /* text already muted: « Pas de proposition identifiée » */
+  .theme h3 { margin: 0 0 .6rem; font-family: var(--mono); font-size: var(--step--1); font-weight: 500; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  .team { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: 1rem; margin-top: 1rem; }
+
+  @media print {
+    .chips, .toc, .back, .more > summary { display: none; }
+    .page { display: block; }
+    .lede { display: block; }
+    .more::details-content { content-visibility: visible; display: contents; }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .cat { animation: rise .9s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 90ms + 100ms); }
+    .aside { animation: fade .8s ease .5s both; }
+    @supports (animation-timeline: view()) {
+      .fact {
+        animation: reveal linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 35%;
+      }
+    }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(2rem); }
+  }
+  @keyframes fade {
+    from { opacity: 0; }
+  }
+  @keyframes reveal {
+    from { opacity: 0; transform: translateY(1.5rem); }
+  }
+</style>

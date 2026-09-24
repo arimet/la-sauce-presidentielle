@@ -1,0 +1,31 @@
+---
+import type { PersonEntry } from '../lib/people';
+import { summarizeCounts } from '../lib/facts';
+import { url } from '../lib/url';
+
+interface Props {
+  person: PersonEntry;
+}
+const { person } = Astro.props;
+const { name, party, photo, teamPosition, facts } = person.data;
+const initials = name.split(' ').map((w) => w[0]).join('').slice(0, 2);
+---
+<a class="card" href={url(`/${person.id}`)}>
+  {photo ? <img src={url(photo)} alt="" width="72" height="72" /> : <span class="initials" aria-hidden="true">{initials}</span>}
+  <span>
+    <strong>{name}</strong>
+    <span class="meta">{teamPosition ?? party}</span>
+    <span class="meta">{summarizeCounts(facts)}</span>
+  </span>
+</a>
+<style>
+  .card { display: flex; gap: 1rem; align-items: center; padding: 1rem; border: 1px solid var(--line); border-radius: .25rem; text-decoration: none; }
+  strong { font-weight: 600; letter-spacing: -.01em; }
+  .card:hover { border-color: var(--fg); }
+  img, .initials { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; flex: none; }
+  .initials { display: grid; place-items: center; background: var(--line); font-family: var(--serif); font-style: italic; font-size: var(--step-2); }
+  .meta { display: block; color: var(--muted); font-size: .875rem; }
+  @media (prefers-reduced-motion: no-preference) {
+    .card { transition: border-color .2s; }
+  }
+</style>

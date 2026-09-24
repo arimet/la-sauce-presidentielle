@@ -1,0 +1,381 @@
+---
+import Base from '../layouts/Base.astro';
+import { getPeople } from '../lib/people';
+import { summarizeCounts } from '../lib/facts';
+import { textOn, inkTone } from '../lib/color';
+import { url } from '../lib/url';
+
+const candidates = (await getPeople())
+  .filter((p) => p.data.role === 'candidate')
+  .sort((a, b) => a.data.name.localeCompare(b.data.name, 'fr'));
+const total = candidates.length; // the counter counts candidates only
+const pad = (n: number) => String(n).padStart(2, '0');
+const initials = (name: string) => name.split(' ').map((w) => w[0]).join('').slice(0, 2);
+---
+<Base ink="var(--fg)" footer={false}>
+  <section class="stage" aria-label="Candidats">
+    <article class="slide intro" data-active style="--party: var(--bg); --ink: var(--fg)">
+      <img class="backdrop" src={url('/images/elysee-toon.webp')} alt="" width="1920" height="1000" />
+      {/* One flat stripe per candidate, colors in the carousel order. */}
+      <div class="stripes" aria-hidden="true">
+        {candidates.map((p, i) => <span style={`--c: ${p.data.partyColor}; --i: ${i}`}></span>)}
+      </div>
+      <div class="intro-text">
+        <h1 class="title">La Sauce <span class="title-sub">Présidentielle</span></h1>
+        <p class="tagline">Avant de voter, les faits.</p>
+        <p class="lede">Condamnations, procédures et polémiques des candidats à la présidentielle 2027, sourcées et archivées.</p>
+        <p class="meta"><a href={url('/programmes')}>Programmes</a> · <a href={url('/methodologie')}>Méthodologie</a></p>
+        <p class="author">Site réalisé par <a href="https://github.com/arimet" rel="author">Anthony Rimet</a></p>
+        <p class="swipe-hint">Faites glisser pour parcourir les candidats</p>
+        <p class="backdrop-credit">Palais de l’Élysée : <a href="https://commons.wikimedia.org/wiki/File:Palais_de_l%27%C3%89lys%C3%A9e_2019.jpg">Leynadmar, Wikimedia Commons</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.fr">CC BY-SA 4.0</a>, stylisé</p>
+      </div>
+    </article>
+    {candidates.map((p, i) => (
+      <article class="slide" data-slug={p.id}
+        style={`--party: ${p.data.partyColor}; --ink: ${textOn(p.data.partyColor!)}; --outline: url(#ink-md-${inkTone(p.data.partyColor!)}); --progress: ${(i + 1) / total}`}>
+        {/* display: contents, so the portrait stays positioned by the slide; tapping it opens the page. */}
+        {p.data.photo && <a class="portrait-link" href={url(`/${p.id}`)} tabindex="-1" aria-hidden="true"><img class="portrait" src={url(p.data.photo)} alt="" decoding="async" /></a>}
+        <h2 class="name"><a href={url(`/${p.id}`)}>{p.data.name}</a></h2>
+        <p class="meta">{p.data.party} · {summarizeCounts(p.data.facts)}</p>
+        <p class="counter">{pad(i + 1)} / {pad(total)}</p>
+      </article>
+    ))}
+    <div class="strip-wrap" data-at-start>
+    <button class="strip-arrow prev" type="button" tabindex="-1" aria-hidden="true">‹</button>
+    <nav class="strip" aria-label="Candidats">
+      <a class="thumb intro-thumb" data-active href={url('/')} style="--party: var(--bg); --ink: var(--fg)">
+        <img src={url('/images/elysee-toon.webp')} alt="" />
+        <span class="label" aria-hidden="true">Accueil</span>
+        <span class="visually-hidden">Accueil</span>
+      </a>
+      {candidates.map((p) => (
+        <a class="thumb" href={url(`/${p.id}`)}
+          style={`--party: ${p.data.partyColor}; --ink: ${textOn(p.data.partyColor!)}; --outline: url(#ink-sm-${inkTone(p.data.partyColor!)})`}>
+          {p.data.photo ? <img src={url(p.data.photo)} alt="" decoding="async" /> : <span class="thumb-initials" aria-hidden="true">{initials(p.data.name)}</span>}
+          <span class="visually-hidden">{p.data.name}</span>
+        </a>
+      ))}
+    </nav>
+    <button class="strip-arrow next" type="button" tabindex="-1" aria-hidden="true">›</button>
+    </div>
+    <script is:inline>
+      // Fairness: shuffle candidates (slides, thumbs and intro stripes together) on every load,
+      // before first paint. The intro stays first; without JS the order stays alphabetical.
+      (() => {
+        const stage = document.currentScript.closest('.stage');
+        const strip = stage.querySelector('.strip');
+        const wrap = strip.parentElement;
+        const slides = [...stage.querySelectorAll('.slide:not(.intro)')];
+        // The intro thumb never shuffles: it stays first, alongside the intro slide.
+        const thumbs = [...strip.querySelectorAll('.thumb:not(.intro-thumb)')];
+        const stripes = stage.querySelector('.stripes');
+        const stripeEls = [...stripes.children];
+        const order = slides.map((_, i) => i);
+        const rand = new Uint32Array(order.length);
+        crypto.getRandomValues(rand);
+        for (let i = order.length - 1; i > 0; i--) {
+          const j = rand[i] % (i + 1);
+          [order[i], order[j]] = [order[j], order[i]];
+        }
+        const total = slides.length;
+        const pad = (n) => String(n).padStart(2, '0');
+        order.forEach((k, pos) => {
+          const slide = slides[k];
+          stage.insertBefore(slide, wrap);
+          strip.appendChild(thumbs[k]);
+          stripes.appendChild(stripeEls[k]);
+          stripeEls[k].style.setProperty('--i', pos);
+          slide.style.setProperty('--progress', (pos + 1) / total);
+          slide.querySelector('.counter').textContent = `${pad(pos + 1)} / ${pad(total)}`;
+        });
+      })();
+    </script>
+  </section>
+</Base>
+
+<script>
+  // Thumbnails are plain links (works without JS). JS only syncs the stage with
+  // the hovered / focused / centered thumbnail. Thumb 0 is the intro (linking to
+  // "/"), matching slide 0; thumb i shows slide i, and Escape goes back to the intro.
+  const stage = document.querySelector<HTMLElement>('.stage')!;
+  const strip = stage.querySelector<HTMLElement>('.strip')!;
+  const wrap = strip.parentElement!;
+  const slides = [...stage.querySelectorAll<HTMLElement>('.slide')];
+  const thumbs = [...stage.querySelectorAll<HTMLAnchorElement>('.thumb')];
+
+  const behavior = (): ScrollBehavior =>
+    matchMedia('(prefers-reduced-motion: no-preference)').matches ? 'smooth' : 'auto';
+
+  // Keeps a thumb clear of the faded / arrowed edges. Scrolls the strip only (scrollIntoView
+  // could also scroll the overflow-hidden stage).
+  function reveal(thumb: HTMLElement) {
+    const t = thumb.getBoundingClientRect(), s = strip.getBoundingClientRect();
+    const pad = Math.min(48, s.width / 4);
+    const dx = t.left < s.left + pad ? t.left - s.left - pad : t.right > s.right - pad ? t.right - s.right + pad : 0;
+    if (dx) strip.scrollBy({ left: dx, behavior: behavior() });
+  }
+
+  // Edge fades and arrows only where there is more to scroll.
+  function syncEdges() {
+    wrap.toggleAttribute('data-at-start', strip.scrollLeft <= 1);
+    wrap.toggleAttribute('data-at-end', strip.scrollLeft + strip.clientWidth >= strip.scrollWidth - 1);
+  }
+  strip.addEventListener('scroll', syncEdges, { passive: true });
+  addEventListener('resize', syncEdges);
+  syncEdges();
+  wrap.querySelectorAll<HTMLButtonElement>('.strip-arrow').forEach((btn) =>
+    btn.addEventListener('click', () =>
+      strip.scrollBy({ left: (btn.classList.contains('prev') ? -.8 : .8) * strip.clientWidth, behavior: behavior() })));
+
+  function select(i: number, scroll = true) {
+    slides.forEach((s, j) => s.toggleAttribute('data-active', i === j));
+    thumbs.forEach((t, j) => t.toggleAttribute('data-active', i === j));
+    // The transparent header takes the active slide's text color.
+    document.body.style.setProperty('--ink', slides[i].style.getPropertyValue('--ink'));
+    // Only the active slide's portrait morphs into the person page portrait
+    // (a view-transition-name must be unique on the page).
+    slides.forEach((s, j) => {
+      const portrait = s.querySelector<HTMLElement>('.portrait');
+      if (portrait) portrait.style.viewTransitionName = i === j ? `photo-${s.dataset.slug}` : '';
+    });
+    if (scroll) reveal(thumbs[i]);
+  }
+
+  thumbs.forEach((thumb, i) => {
+    thumb.addEventListener('pointerenter', () => select(i, false));
+    thumb.addEventListener('focus', () => select(i));
+    thumb.addEventListener('click', () => select(i));
+    thumb.addEventListener('keydown', (e) => {
+      const next = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : -1;
+      if (next >= 0 && next < thumbs.length) {
+        e.preventDefault();
+        thumbs[next].focus({ preventScroll: true });
+      }
+    });
+  });
+
+  document.addEventListener('keydown', (e) => e.key === 'Escape' && select(0));
+
+  // Touch: the strip scroll-snaps; the centered thumbnail becomes active. Observing
+  // starts on the first scroll so the intro stays up on load.
+  if (matchMedia('(pointer: coarse)').matches) {
+    const observer = new IntersectionObserver(
+      (entries) => entries.forEach((e) => e.isIntersecting && select(thumbs.indexOf(e.target as HTMLAnchorElement), false)),
+      { root: strip, rootMargin: '0px -45% 0px -45%' },
+    );
+    strip.addEventListener('scroll', () => thumbs.forEach((t) => observer.observe(t)), { once: true });
+
+    // A horizontal swipe anywhere on the stage steps to the next / previous slide.
+    let x0 = 0, y0 = 0;
+    stage.addEventListener('touchstart', (e) => ({ clientX: x0, clientY: y0 } = e.touches[0]), { passive: true });
+    stage.addEventListener('touchend', (e) => {
+      if (strip.contains(e.target as Node)) return; // the strip scrolls on its own
+      const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+      if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      const current = slides.findIndex((s) => s.hasAttribute('data-active'));
+      const next = Math.min(Math.max(current + (dx < 0 ? 1 : -1), 0), slides.length - 1);
+      if (next === current) return;
+      select(next, false);
+      const t = thumbs[next];
+      strip.scrollTo({ left: t.offsetLeft + t.offsetWidth / 2 - strip.clientWidth / 2, behavior: behavior() });
+    });
+  }
+</script>
+
+<style>
+  .stage {
+    --gutter: clamp(1rem, 3vw, 2.5rem);
+    --thumb-w: clamp(4.5rem, 7vw, 6.5rem);
+    --thumb-h: calc(var(--thumb-w) * .75);
+    /* Room above the strip for the enlarged active thumb. */
+    --strip-h: calc(var(--thumb-h) * 1.35 + .5rem);
+    --strip-bottom: calc(var(--gutter) + env(safe-area-inset-bottom));
+    position: relative; overflow: hidden;
+    height: 100vh; height: 100dvh; min-height: 34rem;
+  }
+  .slide {
+    position: absolute; inset: 0; box-sizing: border-box;
+    padding: calc(var(--header-h) + clamp(.5rem, 2vw, 1.5rem)) max(var(--gutter), env(safe-area-inset-right)) var(--gutter) max(var(--gutter), env(safe-area-inset-left));
+    display: flex; flex-direction: column;
+    background: var(--party); color: var(--ink);
+    opacity: 0; visibility: hidden;
+  }
+  .slide ::selection, .thumb::selection { background: var(--ink); color: var(--party); }
+  .slide[data-active] { opacity: 1; visibility: visible; }
+  .portrait {
+    position: absolute; bottom: -.5rem; left: 50%; translate: -50% 0; /* hides the outline along the bottom crop */
+    height: 88%; max-width: 90%; object-fit: contain; object-position: bottom;
+    filter: var(--outline) drop-shadow(.5rem .3rem 0 rgb(0 0 0 / .2));
+  }
+  .name {
+    position: relative; margin: 0; max-width: 12ch;
+    font-family: var(--sans); font-weight: 600;
+    font-size: clamp(3rem, 12vw, 9rem); line-height: .9; letter-spacing: -.04em;
+    /* A background-colored rim keeps the letters legible where they cross the portrait. */
+    -webkit-text-stroke: .1em var(--party); paint-order: stroke fill;
+  }
+  .name a { color: inherit; text-decoration: none; }
+  .portrait-link { display: contents; }
+  .name a:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: .08em; }
+  .meta, .counter {
+    position: relative; margin: 0;
+    font-family: var(--mono); font-size: var(--step--1); text-transform: uppercase; letter-spacing: .06em;
+  }
+  .meta { margin-top: 1rem; max-width: 19rem; }
+  .slide:not(.intro) .meta { text-shadow: 0 0 .3em var(--party), 0 0 .3em var(--party); }
+  /* Counter sits right above the thumbnail strip, aligned with it. */
+  .counter {
+    position: absolute; right: var(--gutter); bottom: calc(var(--strip-bottom) + var(--strip-h) + .25rem);
+    box-sizing: border-box; width: min(14rem, 50%); padding: .3rem .4rem .5rem; text-align: right; font-variant-numeric: tabular-nums;
+    background: var(--party); /* stays readable over the portrait */
+  }
+  /* Thin progress line under the counter. */
+  .counter::after {
+    content: ''; position: absolute; left: 0; bottom: 0; height: 1px; width: 100%;
+    background: linear-gradient(to right, currentColor calc(var(--progress) * 100%), color-mix(in srgb, currentColor 25%, transparent) 0);
+  }
+
+  /* Intro: title at the bottom left, party-colored stripes along the top edge. */
+  .slide.intro { justify-content: flex-end; }
+  /* The intro is the brand screen: the header wordmark would only duplicate its title. */
+  :global(body:has(.slide.intro[data-active]) .site-header) { opacity: 0; visibility: hidden; }
+  .intro-text { position: relative; isolation: isolate; width: fit-content; }
+  /* Soft page-colored wash so the backdrop's lines never compete with the text. */
+  .intro-text::before {
+    content: ''; position: absolute; inset: -4rem -8rem -3rem -6rem; z-index: -1;
+    background: radial-gradient(closest-side, var(--bg) 55%, color-mix(in srgb, var(--bg) 0%, transparent));
+  }
+  /* Toon-shaded Élysée (baked offline, low contrast, sky faded into the page), anchored at the bottom. */
+  .backdrop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center bottom; pointer-events: none; }
+  .author { margin: .5rem 0 0; font-family: var(--mono); font-size: .7rem; letter-spacing: .04em; color: var(--muted); }
+  .author a { color: var(--fg); }
+  .backdrop-credit { margin: .75rem 0 0; font-family: var(--mono); font-size: .6rem; letter-spacing: .04em; color: var(--muted); }
+  .backdrop-credit a { color: inherit; }
+  .swipe-hint { display: none; }
+  .title {
+    margin: 0;
+    font-family: var(--serif); font-style: italic; font-weight: 500;
+    font-size: clamp(4rem, min(13vw, 17dvh), 10rem); line-height: .85; letter-spacing: -.03em;
+  }
+  .title-sub { display: block; font-size: .42em; letter-spacing: -.01em; line-height: 1; margin-top: .1em; }
+  .tagline { margin: 1rem 0 0; font-family: var(--serif); font-weight: 500; font-size: clamp(1.5rem, min(3vw, 4.5dvh), 2.4rem); line-height: 1.1; letter-spacing: -.01em; }
+  .lede { margin: .5rem 0 0; max-width: 42ch; font-family: var(--serif); font-size: clamp(1rem, 1.5vw, 1.2rem); line-height: 1.3; text-wrap: pretty; color: color-mix(in srgb, currentColor 80%, transparent); }
+  /* Flat, cel-style band: ink rule underneath and ink separators between colors. */
+  .stripes {
+    position: absolute; top: 0; left: 0; right: 0;
+    display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+    height: clamp(.75rem, 1.6vw, 1.25rem);
+  }
+  .stripes span { background: var(--c); border-bottom: 3px solid #111; }
+  .stripes span + span { border-left: 2px solid #111; }
+
+  /* Thumbnail strip: bottom right, compact, scrolls sideways once it outgrows its max width. */
+  .strip-wrap {
+    position: absolute; right: calc(var(--gutter) - var(--thumb-w) * .2); bottom: var(--strip-bottom); z-index: 1;
+    max-width: calc(100% - 2 * var(--gutter) + var(--thumb-w) * .4);
+    --fade: 3rem;
+  }
+  .strip {
+    display: flex; gap: .4rem; align-items: flex-end;
+    overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+    box-sizing: border-box; height: var(--strip-h); padding: 0 calc(var(--thumb-w) * .2);
+    mask-image: linear-gradient(to right, transparent, #000 var(--fade-l, var(--fade)), #000 calc(100% - var(--fade-r, var(--fade))), transparent);
+  }
+  .strip-wrap[data-at-start] { --fade-l: 0px; }
+  .strip-wrap[data-at-end] { --fade-r: 0px; }
+  .strip-arrow {
+    position: absolute; bottom: calc(var(--thumb-h) / 2 - 1.1rem); z-index: 2;
+    width: 2.2rem; height: 2.2rem; padding: 0 0 .15rem; border: 1px solid var(--fg); border-radius: 50%;
+    background: var(--bg); color: var(--fg); font: 1.4rem/1 var(--sans); cursor: pointer;
+  }
+  .strip-arrow.prev { left: 0; }
+  .strip-arrow.next { right: 0; }
+  .strip-wrap[data-at-start] .prev, .strip-wrap[data-at-end] .next { opacity: 0; visibility: hidden; }
+  .strip::-webkit-scrollbar { display: none; }
+  .thumb {
+    flex: none; width: var(--thumb-w); aspect-ratio: 4 / 3; overflow: hidden;
+    scroll-snap-align: center; text-decoration: none;
+    display: grid; place-items: end center;
+    background: var(--party); color: var(--ink);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 25%, transparent);
+    transform-origin: bottom center;
+  }
+  .thumb img { width: 80%; height: 90%; object-fit: contain; object-position: bottom; filter: var(--outline); margin-bottom: -3px; }
+  .thumb-initials { place-self: center; font-family: var(--serif); font-style: italic; font-size: var(--step-3); }
+  .thumb[data-active] { transform: scale(1.3); z-index: 1; }
+  .thumb:focus-visible { outline-offset: 3px; }
+  /* Intro thumb: the Élysée backdrop, cropped on the palace instead of a candidate cutout. */
+  .intro-thumb { position: relative; }
+  .intro-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: center 35%; filter: none; margin: 0; }
+  .intro-thumb .label {
+    position: absolute; left: .3rem; bottom: .2rem;
+    font-family: var(--mono); font-size: .55rem; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--ink); text-shadow: 0 0 .4em var(--party), 0 0 .4em var(--party);
+  }
+
+  /* Tall screens: keep the face below the name and metadata. */
+  @media (orientation: portrait) {
+    .portrait { height: 72%; }
+  }
+  /* Not enough width for the intro text and the strip side by side: stack them. */
+  @media (max-width: 71.99rem) {
+    .slide.intro { padding-bottom: calc(var(--strip-bottom) + var(--strip-h) + 2.5rem); }
+  }
+  /* Wide screens: the intro text sits beside the strip, so the strip keeps to the right half. */
+  @media (min-width: 72rem) {
+    .strip-wrap { max-width: 46vw; }
+  }
+  @media (max-width: 47.99rem) {
+    .stage { --thumb-w: 4.75rem; }
+  }
+  /* Touch: the centered thumb is the active one, so any thumb must be able to reach the center. */
+  @media (pointer: coarse) {
+    .strip { padding-inline: calc(50% - var(--thumb-w) / 2); }
+    .strip-arrow { display: none; }
+    .strip-wrap { width: calc(100% - 2 * var(--gutter) + var(--thumb-w) * .4); } /* the centering padding needs a definite width */
+    .swipe-hint {
+      display: block; margin: .5rem 0 0; color: var(--muted);
+      font-family: var(--mono); font-size: .65rem; text-transform: uppercase; letter-spacing: .06em;
+    }
+  }
+  /* Phones held upright: the portrait gets its own row between the name block and the counter,
+     centered there, at its own ratio (so it still morphs cleanly into the person page). */
+  @media (orientation: portrait) and (max-width: 47.99rem) {
+    .slide:not(.intro) {
+      display: grid; grid-template-rows: auto auto minmax(0, 1fr); justify-items: start;
+      padding-bottom: calc(var(--strip-bottom) + var(--strip-h) + 2.75rem);
+    }
+    .portrait {
+      position: static; grid-row: 3; justify-self: center; align-self: center; translate: none;
+      width: auto; height: auto; max-width: 100%; max-height: 100%; min-height: 0; margin-top: 1rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .slide { transition: opacity .6s var(--ease-out), visibility .6s; }
+    :global(.has-hero .site-header) { transition: color .6s var(--ease-out), opacity .6s var(--ease-out), visibility .6s; }
+    .portrait { transition: translate .9s var(--ease-out); translate: -50% 4%; }
+    .slide[data-active] .portrait { translate: -50% 0; }
+    @media (orientation: portrait) and (max-width: 47.99rem) {
+      .portrait { translate: 0 4%; }
+      .slide[data-active] .portrait { translate: none; }
+    }
+    .name, .meta, .title, .tagline, .lede { transition: opacity .8s var(--ease-out) .15s, transform .8s var(--ease-out) .15s; opacity: 0; transform: translateY(.4em); }
+    .slide[data-active] :is(.name, .meta, .title, .tagline, .lede) { opacity: 1; transform: none; }
+    .thumb { transition: transform .45s var(--ease-out); }
+    .thumb:not([data-active]):hover { transform: scale(1.08); }
+    .strip-arrow { transition: opacity .3s, visibility .3s; }
+    /* Stripes grow in once, left to right. */
+    .stripes span { animation: grow .7s var(--ease-out) calc(.15s + var(--i) * .08s) both; transform-origin: left; }
+    /* Touch: the strip nudges once on arrival, showing it scrolls. */
+    @media (pointer: coarse) {
+      .strip { animation: nudge 1.2s var(--ease-out) 1s both; }
+    }
+  }
+  @keyframes grow {
+    from { scale: 0 1; }
+  }
+  @keyframes nudge {
+    30% { translate: -1.5rem 0; }
+  }
+</style>

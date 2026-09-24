@@ -12,7 +12,8 @@ Pour chaque candidat, le site recense :
 - les **prises de position controversées** (déclarations ou votes ayant suscité une controverse publique documentée) ;
 - **« Autour du parti »** : les polémiques documentées impliquant d'autres membres du parti du candidat, avec le nom de la personne concernée, jamais imputées au candidat ;
 - le **contexte** : les débats publics documentés liés au candidat qui ne portent pas sur ses propres actes ;
-- les **grandes lignes du programme** par thème, tirées uniquement de sources officielles.
+- les **grandes lignes du programme** par thème, tirées uniquement de sources officielles ;
+- l'**entourage** : au plus 8 rôles clés de campagne par candidat, avec leur parcours documenté depuis 2012 et leurs liens d'intérêts déclarés, ainsi qu'un graphe et un tableau des organisations communes à plusieurs entourages (`/entourage`). Un lien d'intérêt déclaré n'implique aucune faute.
 
 Les candidats sont affichés dans un ordre aléatoire à chaque visite.
 
@@ -38,6 +39,7 @@ La recherche est assistée par un agent d'IA, puis validée par un humain. Rien 
    - la dernière issue connue de chaque affaire est indiquée.
 
    L'agent rédige le fichier Markdown (`src/content/people/<slug>.md`) et une liste de relecture (`docs/reviews/<slug>.md`) qui reprend chaque fait avec ses sources, les classements douteux et les faits écartés, puis ouvre une pull request.
+   La commande [`/entourage`](.claude/commands/entourage.md) procède en deux temps, pour qu'un humain valide le périmètre avant la recherche approfondie : `/entourage list <slug-du-candidat>` recense les rôles clés de campagne (sourcés, 8 au plus), puis `/entourage details <slug-de-la-personne>…` complète le parcours et les liens d'intérêts déclarés, en partant des sources officielles (open data HATVP, registre des entreprises, Journal officiel), avec une règle stricte sur les homonymes. Elle écrit les fichiers et une liste de vérification (`docs/reviews/<slug>-entourage.md`) mais ne commite jamais. `node scripts/check-people.mjs` valide les fichiers avec le schéma sans build complet.
 2. **Validation humaine.** Une personne ouvre chaque source, vérifie chaque fait, coche la liste et seulement ensuite fusionne. Les listes restent dans [`docs/reviews/`](docs/reviews/), par transparence.
 3. **Contrôles du schéma.** [`src/schema.ts`](src/schema.ts) (Zod) fait échouer la compilation pour tout fait sans source, toute source sans archive `web.archive.org/web/`, une allégation à source unique, un statut définitif sur une allégation, une photo sans crédit, etc.
 

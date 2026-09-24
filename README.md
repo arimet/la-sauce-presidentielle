@@ -12,7 +12,8 @@ For each candidate, the site lists:
 - **controversial public stances** (statements or votes that caused a documented public controversy);
 - **"Autour du parti"**: documented controversies involving other members of the candidate's party, naming the person concerned and never imputed to the candidate;
 - **context**: documented public debates related to the candidate that are not about their own acts;
-- **programme highlights** by theme, taken from official sources only.
+- **programme highlights** by theme, taken from official sources only;
+- **entourage**: up to 8 key campaign roles per candidate, with their documented career since 2012 and their declared interests, plus a graph and a table of the organizations shared by several entourages (`/entourage`). A declared interest does not imply any wrongdoing.
 
 Candidates are shown in a random order on every visit.
 
@@ -38,6 +39,7 @@ Research is assisted by an AI agent, then validated by a human. Nothing is publi
    - the latest known outcome of every matter is recorded.
 
    The agent writes the Markdown file (`src/content/people/<slug>.md`) and a review checklist (`docs/reviews/<slug>.md`) listing every fact with its sources, doubtful classifications and facts left out, then opens a pull request.
+   The [`/entourage`](.claude/commands/entourage.md) command works in two steps, so a human checks who is in scope before the deeper research: `/entourage list <candidate-slug>` finds the key campaign roles (sourced, at most 8), then `/entourage details <person-slug>…` fills the career and declared interests, starting from official records (HATVP open data, company register, Journal officiel), with a strict homonym rule. It writes files and a checklist (`docs/reviews/<slug>-entourage.md`) but never commits. `node scripts/check-people.mjs` validates files against the schema without a full build.
 2. **Human validation.** A person opens every source, checks each fact against it, ticks the checklist and only then merges. The checklists stay in [`docs/reviews/`](docs/reviews/) for transparency.
 3. **Schema checks.** [`src/schema.ts`](src/schema.ts) (Zod) makes the build fail on any fact without a source, any source without a `web.archive.org/web/` snapshot, an allegation with a single source, a final status on an allegation, a photo without credit, and so on.
 

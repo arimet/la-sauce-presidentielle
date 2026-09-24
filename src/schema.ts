@@ -109,6 +109,7 @@ export const person = z
     role: z.enum(['candidate', 'team']),
     candidateOf: z.string().nullish(),
     teamPosition: z.string().nullish(),
+    teamSources: z.array(source).min(1).optional(), // sources of the campaign role
     partyColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
     photo: z.string().startsWith('/photos/').optional(),
     photoCredit: z.string().optional(),
@@ -125,8 +126,11 @@ export const person = z
     if (p.role === 'candidate' && !p.partyColor) {
       ctx.addIssue({ code: 'custom', path: ['partyColor'], message: 'a candidate needs a partyColor (#rrggbb)' });
     }
-    if (p.role === 'candidate' && (p.candidateOf || p.teamPosition)) {
-      ctx.addIssue({ code: 'custom', path: ['role'], message: 'a candidate has no candidateOf or teamPosition' });
+    if (p.role === 'team' && !p.teamSources) {
+      ctx.addIssue({ code: 'custom', path: ['teamSources'], message: 'a team member needs teamSources for the campaign role' });
+    }
+    if (p.role === 'candidate' && (p.candidateOf || p.teamPosition || p.teamSources)) {
+      ctx.addIssue({ code: 'custom', path: ['role'], message: 'a candidate has no candidateOf, teamPosition or teamSources' });
     }
     if (p.photo && !p.photoCredit) {
       ctx.addIssue({ code: 'custom', path: ['photoCredit'], message: 'photoCredit is required when photo is set' });

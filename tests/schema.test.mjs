@@ -62,7 +62,12 @@ test('forbids a status on a stance and requires one elsewhere', () => {
 
 test('requires candidateOf and teamPosition for a team member', () => {
   rejects({ ...candidate, role: 'team' });
-  accepts({ ...candidate, role: 'team', candidateOf: 'camille-exemple', teamPosition: 'Porte-parole' });
+  accepts({ ...candidate, role: 'team', candidateOf: 'camille-exemple', teamPosition: 'Porte-parole', teamSources: [source] });
+});
+
+test('requires a source for the campaign role of a team member', () => {
+  rejects({ ...candidate, role: 'team', candidateOf: 'camille-exemple', teamPosition: 'Porte-parole' });
+  rejects({ ...candidate, teamSources: [source] });
 });
 
 test('forbids candidateOf on a candidate', () => {
@@ -169,7 +174,7 @@ test('accepts a person without programme', () => {
   accepts(candidate);
 });
 
-const member = { ...candidate, role: 'team', candidateOf: 'camille-exemple', teamPosition: 'Porte-parole' };
+const member = { ...candidate, role: 'team', candidateOf: 'camille-exemple', teamPosition: 'Porte-parole', teamSources: [source] };
 const job = { position: 'Directeur de cabinet', organization: "Ministère de l'Intérieur", start: '2017-05-17', sources: [source] };
 const interest = {
   kind: 'directorship',

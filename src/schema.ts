@@ -4,6 +4,7 @@ export const FACT_TYPES = ['conviction', 'proceeding', 'allegation', 'stance', '
 export const STATUSES = ['final', 'appeal', 'ongoing', 'acquitted', 'dismissed', 'dropped'] as const;
 // Order defines display order everywhere (labels in src/lib/programme.ts).
 export const THEMES = ['economy', 'work', 'immigration', 'security', 'ecology', 'healthEducation', 'institutions', 'international'] as const;
+export const INTEREST_KINDS = ['directorship', 'shareholding', 'consulting', 'lobbying', 'employment', 'board', 'other'] as const;
 export const PROGRAMME_STATUSES = ['published', 'announced'] as const;
 const CONVICTION_STATUSES: readonly string[] = ['final', 'appeal', 'acquitted'];
 const NO_FINAL_STATUSES: readonly string[] = ['ongoing', 'appeal', 'acquitted', 'dismissed', 'dropped'];
@@ -67,6 +68,40 @@ const fact = z
     }
   });
 
+const period = { start: z.coerce.date().optional(), end: z.coerce.date().optional() };
+const endAfterStart = (e: { start?: Date; end?: Date }, ctx: z.RefinementCtx) => {
+  if (e.start && e.end && e.end < e.start) {
+    ctx.addIssue({ code: 'custom', path: ['end'], message: 'end is before start' });
+  }
+};
+
+// A position held; no end = current.
+const job = z
+  .object({
+    position: z.string().min(1),
+    organization: z.string().min(1),
+    ...period,
+    sources: z.array(source).min(1),
+  })
+  .superRefine(endAfterStart);
+
+// A declared or documented link of interest. Official = HATVP, Journal officiel or company register.
+const interest = z
+  .object({
+    kind: z.enum(INTEREST_KINDS),
+    organization: z.string().min(1),
+    description: z.string().min(1).max(280),
+    ...period,
+    official: z.boolean(),
+    sources: z.array(source).min(1),
+  })
+  .superRefine((i, ctx) => {
+    endAfterStart(i, ctx);
+    if (!i.official && i.sources.length < 2) {
+      ctx.addIssue({ code: 'custom', path: ['sources'], message: 'a non-official interest needs at least 2 sources' });
+    }
+  });
+
 export const person = z
   .object({
     name: z.string().min(1),
@@ -80,6 +115,8 @@ export const person = z
     updatedAt: z.coerce.date(),
     facts: z.array(fact).default([]),
     programme: programme.optional(),
+    career: z.array(job).optional(), // newest first
+    interests: z.array(interest).optional(),
   })
   .superRefine((p, ctx) => {
     if (p.role === 'team' && (!p.candidateOf || !p.teamPosition)) {
@@ -101,4 +138,7 @@ export type Fact = Person['facts'][number];
 export type FactType = (typeof FACT_TYPES)[number];
 export type Theme = (typeof THEMES)[number];
 export type Programme = NonNullable<Person['programme']>;
+export type Job = NonNullable<Person['career']>[number];
+export type Interest = NonNullable<Person['interests']>[number];
+export type InterestKind = (typeof INTEREST_KINDS)[number];
 export type Status = (typeof STATUSES)[number];

@@ -168,3 +168,38 @@ test('rejects an unknown programme status and an over-long measure', () => {
 test('accepts a person without programme', () => {
   accepts(candidate);
 });
+
+const member = { ...candidate, role: 'team', candidateOf: 'camille-exemple', teamPosition: 'Porte-parole' };
+const job = { position: 'Directeur de cabinet', organization: "Ministère de l'Intérieur", start: '2017-05-17', sources: [source] };
+const interest = {
+  kind: 'directorship',
+  organization: 'Exemple SAS',
+  description: 'Président de la société',
+  start: '2019-01-01',
+  official: true,
+  sources: [source],
+};
+
+test('accepts a team member with career and interests', () => {
+  accepts({ ...member, career: [job, { ...job, end: '2018-01-01' }], interests: [interest] });
+});
+
+test('rejects a career entry or an interest without source', () => {
+  rejects({ ...member, career: [{ ...job, sources: [] }] });
+  rejects({ ...member, interests: [{ ...interest, sources: [] }] });
+});
+
+test('requires two sources for a non-official interest', () => {
+  rejects({ ...member, interests: [{ ...interest, official: false }] });
+  accepts({ ...member, interests: [{ ...interest, official: false, sources: [source, { ...source, outlet: 'AFP' }] }] });
+});
+
+test('rejects an unknown interest kind and an over-long description', () => {
+  rejects({ ...member, interests: [{ ...interest, kind: 'friendship' }] });
+  rejects({ ...member, interests: [{ ...interest, description: 'x'.repeat(281) }] });
+});
+
+test('rejects an end date before the start date', () => {
+  rejects({ ...member, career: [{ ...job, end: '2016-01-01' }] });
+  rejects({ ...member, interests: [{ ...interest, end: '2018-01-01' }] });
+});
